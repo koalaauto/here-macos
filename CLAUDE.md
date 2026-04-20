@@ -81,6 +81,25 @@ Two fields in `IPGuide/Resources/Info.plist`:
 
 **Whenever a code change ships out of this repo (rebuild to test or tag), bump both fields in the same commit.** The About dialog shows `0.2.0 (2)` — short version in parens around build number.
 
+### GitHub release format (standard)
+
+Keep release title and tag **identical**: `vMAJOR.MINOR.PATCH` (e.g. `v0.3.0`). No tagline, no date, no suffix — the substance goes in the body. This keeps the Releases page uniform, scriptable (`gh release view vX.Y.Z`), and easy to reference from PRs/commits.
+
+Release body template:
+
+```markdown
+## Install
+1. Download IPGuide-X.Y.Z.dmg below.
+2. Open and drag IP Guide into Applications.
+3. First launch: right-click → Open → Open (unsigned build).
+
+## Changes
+- ...
+
+## System requirements
+- macOS 15 Sequoia or later.
+```
+
 ## Reference
 
 - Project plan: `/Users/koala/.claude/plans/ip-guide-rippling-barto.md`
