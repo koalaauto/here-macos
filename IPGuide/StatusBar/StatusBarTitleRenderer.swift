@@ -25,9 +25,9 @@ enum StatusBarTitleRenderer {
         let alpha2 = input.countryAlpha2 ?? ""
         let region = input.regionCode?.uppercased() ?? "??"
 
-        // Slightly smaller glyphs when bordered so the pill doesn't eat too much
-        // vertical space in the menu bar.
-        let flagHeight: CGFloat = input.bordered ? 11 : 13
+        // Inside the pill (bordered) the box already draws attention; shrink the flag
+        // to match. Without a pill, the flag carries the whole visual so give it room.
+        let flagHeight: CGFloat = input.bordered ? 10 : 14
 
         let showFlag = input.countryStyle == .flag && input.showMode != .regionOnly
         let flag: NSImage? = showFlag
@@ -57,9 +57,13 @@ enum StatusBarTitleRenderer {
 
     @MainActor
     private static func compose(flag: NSImage?, text: String, bordered: Bool) -> NSImage? {
-        let font: NSFont = bordered
-            ? NSFont.menuBarFont(ofSize: 11)
-            : NSFont.menuBarFont(ofSize: 0)
+        // Bordered pill drops 2pt off the menu bar default to stay visually calm;
+        // the un-bordered variant uses the full default so the label holds its
+        // own next to other menu bar items.
+        let defaultSize = NSFont.menuBarFont(ofSize: 0).pointSize
+        let font = bordered
+            ? NSFont.menuBarFont(ofSize: max(defaultSize - 2, 9))
+            : NSFont.menuBarFont(ofSize: defaultSize)
         let textAttr: NSAttributedString? = text.isEmpty
             ? nil
             : NSAttributedString(
@@ -72,9 +76,9 @@ enum StatusBarTitleRenderer {
         let textSize = textAttr?.size() ?? .zero
         let flagSize = flag?.size ?? .zero
 
-        let spacing: CGFloat = (flag != nil && textAttr != nil) ? 4 : 0
-        let vPadding: CGFloat = bordered ? 3 : 0
-        let hPadding: CGFloat = bordered ? 6 : 0
+        let spacing: CGFloat = (flag != nil && textAttr != nil) ? 3 : 0
+        let vPadding: CGFloat = bordered ? 1 : 0
+        let hPadding: CGFloat = bordered ? 4 : 0
 
         let contentWidth = flagSize.width + spacing + textSize.width
         let contentHeight = max(flagSize.height, textSize.height)
