@@ -15,6 +15,11 @@ import Foundation
 /// intake, not peer ACKs); instead we time each chunk end-to-end and
 /// report the running aggregate after every chunk.
 actor ThroughputService {
+    /// Default endpoint — Cloudflare's public speed test service.
+    /// `SettingsStore.throughputCustomEndpoint` can override this when the
+    /// user flips `throughputUseCustomEndpoint` on.
+    static let defaultBaseURL = URL(string: "https://speed.cloudflare.com")!
+
     private let downloadBytes: Int
 
     /// Upload is split into N chunks so the live number reflects real
@@ -51,9 +56,12 @@ actor ThroughputService {
     func snapshot() -> ThroughputStatus { state }
 
     /// Kick off a download + upload probe. Coalesces concurrent calls.
-    func runTest() async {
+    /// `baseURL` selects the speed test server — defaults to Cloudflare but
+    /// can be overridden via `SettingsStore.throughputCustomEndpoint` when
+    /// the default is unreachable (SNI blocks, geographic routing, etc).
+    func runTest(baseURL: URL = ThroughputService.defaultBaseURL) async {
         if inflight != nil { return }
-        let task = Task<Void, Never> { [weak self] in await self?.performTest() }
+        let task = Task<Void, Never> { [weak self] in await self?.performTest(baseURL: baseURL) }
         inflight = task
         await task.value
         inflight = nil
@@ -61,7 +69,7 @@ actor ThroughputService {
 
     // MARK: Implementation
 
-    private func performTest() async {
+    private func performTest(baseURL: URL) async {
         let priorResult = state.lastResult
 
         // Download phase — both blocks start blank, progress at 0.
@@ -72,7 +80,7 @@ actor ThroughputService {
             liveProgress: 0
         )
         emit()
-        let downloadResult = await probeDownload()
+        let downloadResult = await probeDownload(baseURL: baseURL)
 
         let downMbps: Double
         switch downloadResult {
@@ -99,7 +107,7 @@ actor ThroughputService {
             liveProgress: 0
         )
         emit()
-        let uploadResult = await probeUpload()
+        let uploadResult = await probeUpload(baseURL: baseURL)
 
         let upMbps: Double
         switch uploadResult {
@@ -127,8 +135,8 @@ actor ThroughputService {
         emit()
     }
 
-    private func probeDownload() async -> Result<Double, Error> {
-        guard let url = URL(string: "https://speed.cloudflare.com/__down?bytes=\(downloadBytes)") else {
+    private func probeDownload(baseURL: URL) async -> Result<Double, Error> {
+        guard let url = Self.downloadURL(baseURL: baseURL, bytes: downloadBytes) else {
             return .failure(URLError(.badURL))
         }
         var request = URLRequest(url: url)
@@ -157,8 +165,8 @@ actor ThroughputService {
     /// So each chunk's end-to-end timing is a truthful throughput sample.
     /// We report the running aggregate after every chunk so the UI ticks
     /// up with real data.
-    private func probeUpload() async -> Result<Double, Error> {
-        guard let url = URL(string: "https://speed.cloudflare.com/__up") else {
+    private func probeUpload(baseURL: URL) async -> Result<Double, Error> {
+        guard let url = Self.uploadURL(baseURL: baseURL) else {
             return .failure(URLError(.badURL))
         }
 
@@ -299,6 +307,31 @@ actor ThroughputService {
         } catch {
             return nil
         }
+    }
+
+    // MARK: URL construction
+
+    /// Append `/__down?bytes=N` to the caller's base URL, respecting any
+    /// subpath the user included (e.g. `https://myserver.com/speedtest`
+    /// becomes `https://myserver.com/speedtest/__down?bytes=N`).
+    static func downloadURL(baseURL: URL, bytes: Int) -> URL? {
+        guard var comps = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
+            return nil
+        }
+        let trimmed = comps.path.hasSuffix("/") ? String(comps.path.dropLast()) : comps.path
+        comps.path = trimmed + "/__down"
+        comps.queryItems = [URLQueryItem(name: "bytes", value: String(bytes))]
+        return comps.url
+    }
+
+    static func uploadURL(baseURL: URL) -> URL? {
+        guard var comps = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
+            return nil
+        }
+        let trimmed = comps.path.hasSuffix("/") ? String(comps.path.dropLast()) : comps.path
+        comps.path = trimmed + "/__up"
+        comps.queryItems = nil
+        return comps.url
     }
 
     /// Translate a URLSession failure into a user-visible one-line reason.

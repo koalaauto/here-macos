@@ -46,6 +46,21 @@ final class SettingsStore {
         }
     }
 
+    /// When off (the default), Throughput hits Cloudflare's speed endpoint.
+    /// Escape hatch for networks where `speed.cloudflare.com` is blocked
+    /// (SNI filtering, geographic reachability issues, overzealous proxy
+    /// rules, …).
+    var throughputUseCustomEndpoint: Bool {
+        didSet { UserDefaults.standard.set(throughputUseCustomEndpoint, forKey: Keys.throughputUseCustomEndpoint) }
+    }
+
+    /// Base URL of a Cloudflare-speedtest-compatible server. Must support
+    /// `GET <base>/__down?bytes=N` and `POST <base>/__up`. Only read when
+    /// `throughputUseCustomEndpoint` is true; otherwise ignored.
+    var throughputCustomEndpoint: String {
+        didSet { UserDefaults.standard.set(throughputCustomEndpoint, forKey: Keys.throughputCustomEndpoint) }
+    }
+
     var refreshInterval: RefreshInterval {
         get { RefreshInterval(rawValue: refreshIntervalSeconds) ?? .m5 }
         set { refreshIntervalSeconds = newValue.rawValue }
@@ -86,6 +101,9 @@ final class SettingsStore {
             .compactMap(PopoverModule.init(rawValue:))
         self.popoverModuleOrder = Self.mergeWithDefaults(savedOrder)
 
+        self.throughputUseCustomEndpoint = defaults.bool(forKey: Keys.throughputUseCustomEndpoint)
+        self.throughputCustomEndpoint = defaults.string(forKey: Keys.throughputCustomEndpoint) ?? ""
+
         // `didSet` doesn't fire during init, so any values we coerced above
         // still sit in UserDefaults in their pre-migration form and would
         // migrate again on every launch. Write the canonical values back
@@ -119,5 +137,7 @@ final class SettingsStore {
         static let latencyIntervalSeconds = "latency.intervalSeconds"
         static let latencySlotCount = "latency.slotCount"
         static let popoverModuleOrder = "popover.moduleOrder"
+        static let throughputUseCustomEndpoint = "throughput.useCustomEndpoint"
+        static let throughputCustomEndpoint = "throughput.customEndpoint"
     }
 }

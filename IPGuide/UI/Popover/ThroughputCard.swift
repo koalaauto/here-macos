@@ -21,6 +21,7 @@ import SwiftUI
 /// on completion.
 struct ThroughputCard: View {
     @Environment(AppEnvironment.self) private var environment
+    @Environment(SettingsStore.self) private var settings
 
     @State private var status: ThroughputStatus = .idle(lastResult: nil)
 
@@ -116,7 +117,8 @@ struct ThroughputCard: View {
         HStack {
             Spacer()
             Button {
-                Task { await environment.throughputService.runTest() }
+                let baseURL = resolvedBaseURL()
+                Task { await environment.throughputService.runTest(baseURL: baseURL) }
             } label: {
                 if status.isRunning {
                     HStack(spacing: 4) {
@@ -191,6 +193,25 @@ struct ThroughputCard: View {
     ) -> Double? {
         guard let result else { return nil }
         return direction == .download ? result.downloadMbps : result.uploadMbps
+    }
+
+    /// Pick between the Cloudflare default and a user-provided custom URL.
+    /// Silently falls back to Cloudflare when the toggle is off, the URL
+    /// field is blank, or the string doesn't parse as https — the failure
+    /// would surface as a connection error in the failed state anyway.
+    private func resolvedBaseURL() -> URL {
+        guard settings.throughputUseCustomEndpoint else {
+            return ThroughputService.defaultBaseURL
+        }
+        let trimmed = settings.throughputCustomEndpoint
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let url = URL(string: trimmed),
+              url.scheme?.lowercased() == "https"
+        else {
+            return ThroughputService.defaultBaseURL
+        }
+        return url
     }
 
     private func format(_ mbps: Double?) -> String {

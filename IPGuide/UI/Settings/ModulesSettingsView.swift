@@ -43,6 +43,35 @@ struct ModulesSettingsView: View {
                 }
                 .disabled(!settings.latencyEnabled)
             }
+
+            Section {
+                Toggle(
+                    String(localized: "Use custom server"),
+                    isOn: $settings.throughputUseCustomEndpoint
+                )
+
+                if settings.throughputUseCustomEndpoint {
+                    TextField(
+                        "https://speed.cloudflare.com",
+                        text: $settings.throughputCustomEndpoint
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .textContentType(.URL)
+                    .autocorrectionDisabled(true)
+                }
+            } header: {
+                Text(String(localized: "Throughput"))
+            } footer: {
+                if settings.throughputUseCustomEndpoint {
+                    Text(String(localized: "URL must support GET /__down?bytes=N and POST /__up (Cloudflare speed test API). Leaves blank or invalid → falls back to Cloudflare."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text(String(localized: "Uses Cloudflare's speed endpoint. Turn on to point at a different server when Cloudflare is unreachable."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .formStyle(.grouped)
     }

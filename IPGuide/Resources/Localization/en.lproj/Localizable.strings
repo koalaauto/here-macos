@@ -47,6 +47,9 @@
 "Target" = "Target";
 "Interval" = "Interval";
 "Slots" = "Slots";
+"Use custom server" = "Use custom server";
+"URL must support GET /__down?bytes=N and POST /__up (Cloudflare speed test API). Leaves blank or invalid → falls back to Cloudflare." = "URL must support GET /__down?bytes=N and POST /__up (Cloudflare speed test API). Leaves blank or invalid → falls back to Cloudflare.";
+"Uses Cloudflare's speed endpoint. Turn on to point at a different server when Cloudflare is unreachable." = "Uses Cloudflare's speed endpoint. Turn on to point at a different server when Cloudflare is unreachable.";
 
 /* Popover — Location card */
 "Copy" = "Copy";
@@ -86,8 +89,15 @@
 "Run test" = "Run test";
 "Retest" = "Retest";
 "Testing…" = "Testing…";
-"Download test failed" = "Download test failed";
-"Upload test failed" = "Upload test failed";
+"Download" = "Download";
+"Upload" = "Upload";
+"no internet" = "no internet";
+"connection lost" = "connection lost";
+"timed out" = "timed out";
+"can't reach host" = "can't reach host";
+"host refused" = "host refused";
+"TLS handshake failed" = "TLS handshake failed";
+"empty response" = "empty response";
 "Tested just now" = "Tested just now";
 "Tested %dm ago" = "Tested %dm ago";
 "Tested %dh ago" = "Tested %dh ago";
