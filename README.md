@@ -13,16 +13,15 @@ Useful when hopping between VPNs, proxies, or traveling — you can tell at a gl
 - **Menu bar widget** with country + region/state code (configurable: `US CA`, `🇺🇸 CA`, flag only, region only, or text only).
 - **Rounded pill border** option that keeps the widget visually contained in the menu bar.
 - **Real rectangular flag icons** (not wavy emoji) for 252 countries and territories — rendered monochrome against the menu bar tint, full-color inside the popover.
-- **Click-through popover** with:
-  - Large copyable IP address.
-  - Mini MapKit location preview (tap to open in Maps).
-  - Timezone abbreviation + live local-time clock.
-  - Expandable **Network** drawer inside the Location card: CIDR, ASN + organization, RIR — collapsed by default with an inline ASN summary.
-  - Manual refresh and "last updated" relative timer that updates every second.
-  - Click the flag to open [ip.guide](https://ip.guide/) in your browser.
-- **Latency widget** — horizontal bar of 30 probes with color-coded tiers (green <500 ms, yellow 500–1000 ms, orange 1000–2000 ms, red ≥2000 ms / timeout / network error). Header shows last / avg / max. Hover a cell for an instant tooltip with the exact timestamp + reading. Configurable target, interval, and slot count.
-- **Reorderable popover modules** — move Location and Latency up/down in Settings → Modules.
-- **Automatic refresh** — configurable every 30s / 1m / 5m / 10m / 30m / 1h.
+- **Click-through popover** with four modules (reorderable in Settings):
+  - **Location** — large copyable IP, mini MapKit preview (tap to open in Maps), timezone + live local clock, and an expandable Network drawer (CIDR, ASN + organization, RIR) with an inline ASN summary when collapsed.
+  - **History** — a right-anchored flag-chain of recent egress-IP changes with "how long ago" labels under each chip; tap a chip for IP + ASN + city detail. Newest chip is pinned to the right to match the Latency bar's time axis.
+  - **Latency** — horizontal bar of 30 probes with color-coded tiers (green <500 ms, yellow 500–1000 ms, orange 1000–2000 ms, red ≥2000 ms / timeout / network error). Header shows last / avg / max. Hover a cell for an instant tooltip. Configurable target, interval, and slot count.
+  - **Throughput** — on-demand download + upload speed test against Cloudflare's speed endpoint. Live Mbps number ticks up during the transfer; last result persists so reopening the popover shows your prior reading.
+- Flag on the hero row **follows the IP's geo-country, not the ASN's registered country** — so a VPN whose ASN is registered in HK but runs a node in TW shows the TW flag.
+- Manual refresh and "last updated" relative timer that updates every second.
+- Click the flag to open [ip.guide](https://ip.guide/) in your browser.
+- **Automatic refresh** — configurable every 1m / 5m / 10m / 30m / 1h.
 - **Smart re-fetch triggers** on network change (Wi-Fi switch, VPN toggle) and wake-from-sleep.
 - **Offline-aware** — caches last known data and shows a staleness badge when readings get old.
 - **Launch at login** via `SMAppService`.

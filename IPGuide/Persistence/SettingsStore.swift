@@ -85,6 +85,14 @@ final class SettingsStore {
         let savedOrder = (defaults.stringArray(forKey: Keys.popoverModuleOrder) ?? [])
             .compactMap(PopoverModule.init(rawValue:))
         self.popoverModuleOrder = Self.mergeWithDefaults(savedOrder)
+
+        // `didSet` doesn't fire during init, so any values we coerced above
+        // still sit in UserDefaults in their pre-migration form and would
+        // migrate again on every launch. Write the canonical values back
+        // explicitly so the next launch reads them as already-valid.
+        defaults.set(validRefreshInterval.rawValue, forKey: Keys.intervalSeconds)
+        defaults.set(validLatencyInterval.rawValue, forKey: Keys.latencyIntervalSeconds)
+        defaults.set(self.latencySlotCount, forKey: Keys.latencySlotCount)
     }
 
     private static func mergeWithDefaults(_ saved: [PopoverModule]) -> [PopoverModule] {

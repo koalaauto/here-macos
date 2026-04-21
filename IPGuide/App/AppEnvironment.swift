@@ -15,8 +15,8 @@ final class AppEnvironment {
     let latencyScheduler: LatencyScheduler
     let launchAtLogin: LaunchAtLoginService
 
-    /// Background task that feeds new IP observations into the history +
-    /// DNS-leak services. Retained so we can cancel on shutdown.
+    /// Background task that feeds new IP observations into the history
+    /// service. Retained so we can cancel on shutdown.
     @MainActor private var stateObserverTask: Task<Void, Never>?
 
     @MainActor

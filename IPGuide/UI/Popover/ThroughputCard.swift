@@ -5,19 +5,20 @@ import SwiftUI
 /// Layout:
 /// ```
 /// ┌─────────────────────────────────────────┐
-/// │ THROUGHPUT                 tested 3m ago │
+/// │ THROUGHPUT               Tested 3m ago   │
 /// │                                          │
-/// │   ↓ 85.2        ↑ 12.4                   │
-/// │   Mbps          Mbps                     │
-/// │   ═══════       ═══════                  │
+/// │   ↓ 85.2 Mbps      ↑ 12.4 Mbps           │
+/// │   ═══════          ═══════               │
 /// │                                          │
-/// │                              [ ↻ Test ]  │
+/// │                             [ ↻ Retest ] │
 /// └─────────────────────────────────────────┘
 /// ```
-/// During a test, the active direction's numbers animate up from 0 and its
-/// progress bar linearly fills over `estimatedDuration` (not byte-accurate —
-/// the actual transfer may finish sooner/later; the final number is the
-/// measured ground truth that replaces the animation).
+/// While a test is running, both blocks blank to "…" and fill in one at a
+/// time as each direction's measurement lands. The active block's number
+/// ticks upward with the rolling Mbps estimate from `ThroughputService`
+/// (`liveMbps` on the `.probing` state); its progress bar is time-linear
+/// over the estimated duration. The final Mbps replaces the rolling value
+/// on completion.
 struct ThroughputCard: View {
     @Environment(AppEnvironment.self) private var environment
 

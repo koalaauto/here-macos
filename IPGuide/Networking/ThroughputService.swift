@@ -2,19 +2,18 @@ import Foundation
 
 /// On-demand throughput probe against Cloudflare's speed endpoint.
 ///
-/// Download: `GET https://speed.cloudflare.com/__down?bytes=N` — N bytes of
-/// random payload. Transfer is timed end-to-end; final Mbps = 8 * bytes /
-/// seconds / 1e6.
+/// Download: `GET https://speed.cloudflare.com/__down?bytes=N` — N random
+/// bytes. A URLSession delegate (`SpeedProbe`) watches `didReceive(data:)`
+/// and forwards a rolling Mbps estimate into the actor ~5 Hz so the UI
+/// can tick up the live number; the final Mbps is the total bytes over
+/// the full elapsed time.
 ///
-/// Upload: `POST https://speed.cloudflare.com/__up` with a random body; same
-/// formula applies.
-///
-/// Progress reporting: a URLSession delegate (`SpeedProbe`) throttles its
-/// `didReceive`/`didSendBodyData` callbacks to ~5 Hz and forwards a rolling
-/// Mbps estimate back into the actor. The UI picks up the estimate via
-/// `ThroughputStatus.probing(…, liveMbps: …)` and tick-animates the number
-/// upwards during the transfer. The FINAL Mbps is computed by the delegate
-/// at `didCompleteWithError` and returned from `runProbe`.
+/// Upload: `POST https://speed.cloudflare.com/__up` — split into
+/// `uploadChunkCount` sequential chunks of `uploadChunkBytes` each.
+/// Delegate-based progress doesn't work for uploads (see `probeUpload`
+/// for the full write-up on `didSendBodyData` measuring socket-buffer
+/// intake, not peer ACKs); instead we time each chunk end-to-end and
+/// report the running aggregate after every chunk.
 actor ThroughputService {
     private let downloadBytes: Int
     private let estimatedDownloadDuration: TimeInterval = 4.0

@@ -18,12 +18,17 @@ extension VerticalAlignment {
 
 /// Horizontal "flag chain" of recent egress-IP changes:
 ///
-///     🇯🇵 →  🇺🇸 →  🇸🇬 (now)
-///     30m    12m    2m
+///     🇯🇵 →  🇺🇸 →  🇸🇬 (now, green dot)
+///     2h     30m    2m
 ///
-/// Click a chip to toggle a small detail row showing the IP + ASN for that
-/// period. Width-aware: if more than `maxChips` events exist, the older ones
-/// collapse into a "+N more" badge at the head.
+/// Each chip's label is "how long ago this event started" (not the duration
+/// stayed — that reading requires the user to sum prior entries). Clicking
+/// a chip toggles a detail row with IP + ASN + city for that period.
+///
+/// Events older than `maxChips` are silently dropped from the visible chain;
+/// the total change count in the header still reflects them. The chain is
+/// right-anchored so the current egress is always the rightmost chip and
+/// arrows align with the flag row via a custom `.flagMidline` alignment.
 struct HistoryCard: View {
     @Environment(AppEnvironment.self) private var environment
 
@@ -99,23 +104,29 @@ struct HistoryCard: View {
         // Newest still lands on the right (Latency-style time axis); older
         // events beyond `maxChips` get dropped from the visible chain,
         // with the header's `N changes` counter reflecting the true total.
+        //
+        // Wrapped in a `TimelineView` with a 30 s periodic tick so each
+        // chip's "time ago" label stays live — without it, "28m" would
+        // stay "28m" until the next IP change fires a re-render.
         let displayed = Array(events.suffix(maxChips))
-        return HStack(alignment: .flagMidline, spacing: 0) {
-            ForEach(Array(displayed.enumerated()), id: \.element.id) { index, event in
-                if index > 0 {
-                    Spacer(minLength: 4)
-                    Image(systemName: "arrow.right")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                    Spacer(minLength: 4)
+        return TimelineView(.periodic(from: .now, by: 30)) { context in
+            HStack(alignment: .flagMidline, spacing: 0) {
+                ForEach(Array(displayed.enumerated()), id: \.element.id) { index, event in
+                    if index > 0 {
+                        Spacer(minLength: 4)
+                        Image(systemName: "arrow.right")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                        Spacer(minLength: 4)
+                    }
+                    chip(for: event, isCurrent: index == displayed.count - 1, now: context.date)
                 }
-                chip(for: event, isCurrent: index == displayed.count - 1)
             }
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity)
     }
 
-    private func chip(for event: IPChangeEvent, isCurrent: Bool) -> some View {
+    private func chip(for event: IPChangeEvent, isCurrent: Bool, now: Date) -> some View {
         Button {
             // No `withAnimation` / `.transition` — expanding the detail row
             // grows the card, and any animation on that size change leaks
@@ -137,7 +148,7 @@ struct HistoryCard: View {
                     // arrows up to the flag row instead of the chip's overall
                     // midpoint (which is lower because of the label below).
                     .alignmentGuide(.flagMidline) { d in d[VerticalAlignment.center] }
-                Text(timeAgoLabel(for: event))
+                Text(timeAgoLabel(for: event, now: now))
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(isCurrent ? .primary : .secondary)
                     .lineLimit(1)
@@ -209,7 +220,7 @@ struct HistoryCard: View {
 
     // MARK: Formatters
 
-    /// "Time ago" the event happened, relative to now.
+    /// "Time ago" the event happened, relative to `now`.
     ///
     /// This is the natural reading of a timestamp under a flag: "I was at
     /// this country 3h ago". Duration-stayed (how long we sat on this IP
@@ -218,8 +229,11 @@ struct HistoryCard: View {
     /// user has to sum all the prior durations, which defeats the purpose
     /// of a glance-able history. Matches the "Updated N min. ago" label in
     /// the popover footer.
-    private func timeAgoLabel(for event: IPChangeEvent) -> String {
-        let seconds = max(0, Date().timeIntervalSince(event.at))
+    ///
+    /// `now` is piped in from the chain's `TimelineView` so labels keep
+    /// advancing even when the history list itself hasn't changed.
+    private func timeAgoLabel(for event: IPChangeEvent, now: Date) -> String {
+        let seconds = max(0, now.timeIntervalSince(event.at))
         return formatDuration(seconds)
     }
 
