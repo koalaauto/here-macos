@@ -65,13 +65,15 @@ struct HistoryCard: View {
     }
 
     private var chain: some View {
-        // Oldest on the LEFT, newest on the RIGHT — same direction as the
-        // Latency bar, so time flows in a single consistent direction across
-        // the popover. "+N more" sits at the HEAD (left) as the clipped tail
-        // of older entries.
+        // Anchor the chain to the RIGHT edge of the card — newest chip sits
+        // at the far right (matches the Latency bar, where the most recent
+        // sample is the rightmost cell). As you read leftward, you travel
+        // back in time; "+N more" is the last visible "…and further" marker
+        // before the clipped older tail.
         let displayed = Array(events.suffix(maxChips))
         let hiddenCount = max(0, events.count - displayed.count)
         return HStack(spacing: 6) {
+            Spacer(minLength: 0)
             if hiddenCount > 0 {
                 Text("+\(hiddenCount)")
                     .font(.caption2)
@@ -86,7 +88,6 @@ struct HistoryCard: View {
                         .foregroundStyle(.tertiary)
                 }
             }
-            Spacer(minLength: 0)
         }
     }
 

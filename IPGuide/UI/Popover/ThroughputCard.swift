@@ -143,6 +143,12 @@ struct ThroughputCard: View {
 
     /// Derive the display string + progress fraction + "is this the direction
     /// currently being measured?" for one arrow.
+    ///
+    /// The contract while probing: show `"…"` for any direction whose fresh
+    /// value hasn't landed yet. Stale values from a previous run are NOT
+    /// shown during a new test — that's confusing UX ("wait, is that the
+    /// new number already?"). The user sees each block fill in as its
+    /// measurement completes.
     private func stateForDirection(
         _ direction: ThroughputStatus.Direction
     ) -> (text: String, progress: Double, isActive: Bool) {
@@ -151,26 +157,24 @@ struct ThroughputCard: View {
             let mbps = directionValue(from: last, direction: direction)
             return (format(mbps), mbps == nil ? 0 : 1, false)
 
-        case .probing(let active, let startedAt, let estDur, let last):
-            if active == direction {
-                // Linear time-based pseudo-progress — actual transfer's
-                // completion beats the animation for short tests, which is
-                // fine (the bar snaps to 1.0 when we move to the next phase).
+        case .probing(let phase, let startedAt, let estDur, let downloadSoFar):
+            if phase == direction {
+                // Active direction: linear time-based pseudo-progress. The
+                // actual transfer's completion beats the animation on fast
+                // connections — that's fine because we immediately advance
+                // the state and the bar snaps to 100% in the "just completed"
+                // branch below.
                 let elapsed = Date().timeIntervalSince(startedAt)
                 let progress = min(1, max(0, elapsed / estDur))
                 return ("…", progress, true)
-            } else {
-                // Not yet started (upload during download) or already done
-                // (download during upload).
-                let mbps = directionValue(from: last, direction: direction)
-                let progress: Double
-                if active == .upload, direction == .download {
-                    progress = 1.0 // download phase has completed
-                } else {
-                    progress = mbps == nil ? 0 : 0
-                }
-                return (format(mbps), progress, false)
             }
+            if direction == .download, phase == .upload {
+                // Download phase finished; `downloadSoFar` holds the just-
+                // measured value. Bar is 100%, number is the fresh reading.
+                return (format(downloadSoFar), 1.0, false)
+            }
+            // Upload block during download phase: not started yet. Blank.
+            return ("…", 0, false)
         }
     }
 

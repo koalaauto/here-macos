@@ -26,5 +26,5 @@ enum PopoverModule: String, CaseIterable, Identifiable, Codable, Sendable {
         }
     }
 
-    static let defaultOrder: [PopoverModule] = [.location, .latency, .history, .throughput]
+    static let defaultOrder: [PopoverModule] = [.location, .history, .latency, .throughput]
 }

@@ -37,12 +37,9 @@ struct ModulesSettingsView: View {
                 .disabled(!settings.latencyEnabled)
 
                 Picker(String(localized: "Slots"), selection: $settings.latencySlotCount) {
-                    Text(verbatim: "15").tag(15)
                     Text(verbatim: "30").tag(30)
                     Text(verbatim: "45").tag(45)
                     Text(verbatim: "60").tag(60)
-                    Text(verbatim: "90").tag(90)
-                    Text(verbatim: "120").tag(120)
                 }
                 .disabled(!settings.latencyEnabled)
             }

@@ -52,25 +52,35 @@ final class SettingsStore {
     }
 
     var latencyInterval: LatencyInterval {
-        get { LatencyInterval(rawValue: latencyIntervalSeconds) ?? .s30 }
+        get { LatencyInterval(rawValue: latencyIntervalSeconds) ?? .s60 }
         set { latencyIntervalSeconds = newValue.rawValue }
     }
 
     init(defaults: UserDefaults = .standard) {
         self.showMode = (defaults.string(forKey: Keys.showMode).flatMap(ShowMode.init(rawValue:))) ?? .both
         self.countryStyle = (defaults.string(forKey: Keys.countryStyle).flatMap(CountryStyle.init(rawValue:))) ?? .flag
+        // Migration: coerce retired options (e.g. 30 s) onto a current case.
         let stored = defaults.integer(forKey: Keys.intervalSeconds)
-        self.refreshIntervalSeconds = stored > 0 ? stored : RefreshInterval.m5.rawValue
+        let validRefreshInterval = RefreshInterval(rawValue: stored) ?? .m5
+        self.refreshIntervalSeconds = validRefreshInterval.rawValue
         self.launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
         self.widgetBordered = defaults.object(forKey: Keys.widgetBordered) as? Bool ?? true
 
         self.latencyEnabled = defaults.object(forKey: Keys.latencyEnabled) as? Bool ?? true
         self.latencyProbeTarget = (defaults.string(forKey: Keys.latencyProbeTarget)
             .flatMap(LatencyProbeTarget.init(rawValue:))) ?? .cloudflare
+        // Migration: if the stored seconds doesn't map to a current
+        // LatencyInterval case (e.g. an older install that saved 10s/30s/120s
+        // which have since been retired), fall through to the new default
+        // rather than stashing an invalid value.
         let latencyStored = defaults.integer(forKey: Keys.latencyIntervalSeconds)
-        self.latencyIntervalSeconds = latencyStored > 0 ? latencyStored : LatencyInterval.s30.rawValue
+        let validLatencyInterval = LatencyInterval(rawValue: latencyStored) ?? .s60
+        self.latencyIntervalSeconds = validLatencyInterval.rawValue
+        // Slot count is a free-form int but the UI only offers a fixed set;
+        // coerce unknown values back to the default.
         let slot = defaults.integer(forKey: Keys.latencySlotCount)
-        self.latencySlotCount = (15...120).contains(slot) ? slot : 30
+        let allowedSlots: Set<Int> = [30, 45, 60]
+        self.latencySlotCount = allowedSlots.contains(slot) ? slot : 30
 
         let savedOrder = (defaults.stringArray(forKey: Keys.popoverModuleOrder) ?? [])
             .compactMap(PopoverModule.init(rawValue:))

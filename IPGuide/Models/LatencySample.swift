@@ -46,7 +46,6 @@ struct LatencyThresholds: Sendable, Equatable {
 enum LatencyProbeTarget: String, CaseIterable, Identifiable, Sendable {
     case cloudflare     // https://1.1.1.1/
     case googleGenerate // https://www.gstatic.com/generate_204
-    case ipGuide        // https://ip.guide/
 
     var id: String { rawValue }
 
@@ -54,7 +53,6 @@ enum LatencyProbeTarget: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .cloudflare: return URL(string: "https://1.1.1.1/cdn-cgi/trace")!
         case .googleGenerate: return URL(string: "https://www.gstatic.com/generate_204")!
-        case .ipGuide: return URL(string: "https://ip.guide/")!
         }
     }
 
@@ -62,28 +60,23 @@ enum LatencyProbeTarget: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .cloudflare:     String(localized: "Cloudflare (1.1.1.1)")
         case .googleGenerate: String(localized: "Google (gstatic.com)")
-        case .ipGuide:        String(localized: "ip.guide")
         }
     }
 }
 
 enum LatencyInterval: Int, CaseIterable, Identifiable, Sendable {
-    case s10 = 10
-    case s30 = 30
     case s60 = 60
-    case s120 = 120
     case s300 = 300
+    case s600 = 600
 
     var id: Int { rawValue }
     var seconds: TimeInterval { TimeInterval(rawValue) }
 
     var label: String {
         switch self {
-        case .s10:  String(localized: "Every 10 seconds")
-        case .s30:  String(localized: "Every 30 seconds")
         case .s60:  String(localized: "Every minute")
-        case .s120: String(localized: "Every 2 minutes")
         case .s300: String(localized: "Every 5 minutes")
+        case .s600: String(localized: "Every 10 minutes")
         }
     }
 }

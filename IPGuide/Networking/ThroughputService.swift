@@ -81,12 +81,12 @@ actor ThroughputService {
     private func performTest() async {
         let priorResult = state.lastResult
 
-        // Download phase
+        // Download phase — both blocks start blank.
         state = .probing(
-            direction: .download,
+            phase: .download,
             startedAt: Date(),
             estimatedDuration: estimatedDownloadDuration,
-            lastResult: priorResult
+            completedDownloadMbps: nil
         )
         emit()
         let download = await probeDownload()
@@ -97,12 +97,13 @@ actor ThroughputService {
             return
         }
 
-        // Upload phase
+        // Upload phase — carry the freshly-measured download through so the
+        // ↓ block can flip from "…" to the real number while ↑ measures.
         state = .probing(
-            direction: .upload,
+            phase: .upload,
             startedAt: Date(),
             estimatedDuration: estimatedUploadDuration,
-            lastResult: priorResult
+            completedDownloadMbps: downMbps
         )
         emit()
         let upload = await probeUpload()

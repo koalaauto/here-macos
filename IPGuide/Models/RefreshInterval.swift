@@ -1,7 +1,6 @@
 import Foundation
 
 enum RefreshInterval: Int, CaseIterable, Identifiable, Sendable {
-    case s30 = 30
     case m1 = 60
     case m5 = 300
     case m10 = 600
@@ -13,7 +12,6 @@ enum RefreshInterval: Int, CaseIterable, Identifiable, Sendable {
 
     var label: String {
         switch self {
-        case .s30: String(localized: "Every 30 seconds")
         case .m1:  String(localized: "Every minute")
         case .m5:  String(localized: "Every 5 minutes")
         case .m10: String(localized: "Every 10 minutes")
