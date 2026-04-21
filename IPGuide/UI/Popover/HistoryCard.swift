@@ -65,25 +65,26 @@ struct HistoryCard: View {
     }
 
     private var chain: some View {
-        // Reverse the visible sequence: newest on the LEFT so the user's eye
-        // lands on "now" first, with older entries trailing to the right.
-        let recent = Array(events.suffix(maxChips)).reversed()
-        let displayed = Array(recent)
+        // Oldest on the LEFT, newest on the RIGHT — same direction as the
+        // Latency bar, so time flows in a single consistent direction across
+        // the popover. "+N more" sits at the HEAD (left) as the clipped tail
+        // of older entries.
+        let displayed = Array(events.suffix(maxChips))
         let hiddenCount = max(0, events.count - displayed.count)
         return HStack(spacing: 6) {
-            ForEach(Array(displayed.enumerated()), id: \.element.id) { index, event in
-                chip(for: event, isCurrent: index == 0)
-                if index < displayed.count - 1 {
-                    Image(systemName: "arrow.left")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-            }
             if hiddenCount > 0 {
                 Text("+\(hiddenCount)")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
-                    .padding(.leading, 2)
+                    .padding(.trailing, 2)
+            }
+            ForEach(Array(displayed.enumerated()), id: \.element.id) { index, event in
+                chip(for: event, isCurrent: index == displayed.count - 1)
+                if index < displayed.count - 1 {
+                    Image(systemName: "arrow.right")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
             }
             Spacer(minLength: 0)
         }
@@ -91,9 +92,11 @@ struct HistoryCard: View {
 
     private func chip(for event: IPChangeEvent, isCurrent: Bool) -> some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.15)) {
-                selectedID = selectedID == event.id ? nil : event.id
-            }
+            // No `withAnimation` / `.transition` — expanding the detail row
+            // grows the card, and any animation on that size change leaks
+            // into sibling modules below (they slide down from the top).
+            // Snap open like the Network disclosure does.
+            selectedID = selectedID == event.id ? nil : event.id
         } label: {
             VStack(spacing: 3) {
                 flagImage(for: event.countryCode)
@@ -170,7 +173,6 @@ struct HistoryCard: View {
             }
         }
         .padding(.top, 4)
-        .transition(.opacity)
     }
 
     // MARK: Formatters

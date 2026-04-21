@@ -10,7 +10,6 @@ final class AppEnvironment {
     let regionMapper: RegionMapper
     let latencyService: LatencyService
     let historyService: IPHistoryService
-    let dnsLeakService: DNSLeakService
     let throughputService: ThroughputService
     let scheduler: RefreshScheduler
     let latencyScheduler: LatencyScheduler
@@ -33,7 +32,6 @@ final class AppEnvironment {
             target: settings.latencyProbeTarget.url
         )
         let historyService = IPHistoryService()
-        let dnsLeakService = DNSLeakService()
         let throughputService = ThroughputService()
         let scheduler = RefreshScheduler(
             ipService: ipService,
@@ -57,7 +55,6 @@ final class AppEnvironment {
         self.ipService = ipService
         self.latencyService = latencyService
         self.historyService = historyService
-        self.dnsLeakService = dnsLeakService
         self.throughputService = throughputService
         self.scheduler = scheduler
         self.latencyScheduler = latencyScheduler
@@ -84,28 +81,24 @@ final class AppEnvironment {
         networkMonitor.stop()
     }
 
-    /// Fan IPService state changes out to the history + DNS-leak services.
-    /// Keeps both features passive — no separate schedulers needed because
-    /// they react to IP refreshes that the main RefreshScheduler already
-    /// drives.
+    /// Fan IPService state changes out to the history service. Keeps the
+    /// feature passive — no separate scheduler needed because it reacts to
+    /// IP refreshes that the main RefreshScheduler already drives.
     @MainActor
     private func startStateObservation() {
         stateObserverTask?.cancel()
         let history = historyService
-        let dns = dnsLeakService
         let stream = ipService.stateStream()
         stateObserverTask = Task {
             var lastIP: String?
             for await state in stream {
                 guard let model = state.model else { continue }
-                // Only trigger on actual IP change (or first observation).
-                // The state stream fires on every loading/loaded transition;
-                // we de-dup here so we don't hammer the DNS beacon on each
-                // scheduled refresh.
+                // Dedup per-IP: the state stream fires on every
+                // loading/loaded transition; we only care about actual
+                // egress changes.
                 if lastIP == model.ip { continue }
                 lastIP = model.ip
                 await history.record(model)
-                await dns.check(against: model)
             }
         }
     }

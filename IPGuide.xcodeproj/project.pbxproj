@@ -50,10 +50,8 @@
 		AA000000000000003000002A /* LatencyCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000002A /* LatencyCard.swift */; };
 		AA000000000000003000002B /* ModulesSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000002B /* ModulesSettingsView.swift */; };
 		AA0000000000000030000048 /* IPChangeEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000048 /* IPChangeEvent.swift */; };
-		AA0000000000000030000049 /* DNSInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000049 /* DNSInfo.swift */; };
 		AA000000000000003000004A /* ThroughputResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000004A /* ThroughputResult.swift */; };
 		AA000000000000003000004B /* IPHistoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000004B /* IPHistoryService.swift */; };
-		AA000000000000003000004C /* DNSLeakService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000004C /* DNSLeakService.swift */; };
 		AA000000000000003000004D /* ThroughputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000004D /* ThroughputService.swift */; };
 		AA000000000000003000004E /* HistoryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000004E /* HistoryCard.swift */; };
 		AA000000000000003000004F /* ThroughputCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000004F /* ThroughputCard.swift */; };
@@ -113,10 +111,8 @@
 		AA000000000000002000002A /* LatencyCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatencyCard.swift; sourceTree = "<group>"; };
 		AA000000000000002000002B /* ModulesSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModulesSettingsView.swift; sourceTree = "<group>"; };
 		AA0000000000000020000048 /* IPChangeEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPChangeEvent.swift; sourceTree = "<group>"; };
-		AA0000000000000020000049 /* DNSInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DNSInfo.swift; sourceTree = "<group>"; };
 		AA000000000000002000004A /* ThroughputResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThroughputResult.swift; sourceTree = "<group>"; };
 		AA000000000000002000004B /* IPHistoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPHistoryService.swift; sourceTree = "<group>"; };
-		AA000000000000002000004C /* DNSLeakService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DNSLeakService.swift; sourceTree = "<group>"; };
 		AA000000000000002000004D /* ThroughputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThroughputService.swift; sourceTree = "<group>"; };
 		AA000000000000002000004E /* HistoryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryCard.swift; sourceTree = "<group>"; };
 		AA000000000000002000004F /* ThroughputCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThroughputCard.swift; sourceTree = "<group>"; };
@@ -219,7 +215,6 @@
 				AA000000000000002000000A /* NetworkMonitor.swift */,
 				AA0000000000000020000028 /* LatencyService.swift */,
 				AA000000000000002000004B /* IPHistoryService.swift */,
-				AA000000000000002000004C /* DNSLeakService.swift */,
 				AA000000000000002000004D /* ThroughputService.swift */,
 			);
 			path = Networking;
@@ -235,7 +230,6 @@
 				AA0000000000000020000026 /* LatencySample.swift */,
 				AA0000000000000020000027 /* PopoverModule.swift */,
 				AA0000000000000020000048 /* IPChangeEvent.swift */,
-				AA0000000000000020000049 /* DNSInfo.swift */,
 				AA000000000000002000004A /* ThroughputResult.swift */,
 			);
 			path = Models;
@@ -522,10 +516,8 @@
 				AA000000000000003000002A /* LatencyCard.swift in Sources */,
 				AA000000000000003000002B /* ModulesSettingsView.swift in Sources */,
 				AA0000000000000030000048 /* IPChangeEvent.swift in Sources */,
-				AA0000000000000030000049 /* DNSInfo.swift in Sources */,
 				AA000000000000003000004A /* ThroughputResult.swift in Sources */,
 				AA000000000000003000004B /* IPHistoryService.swift in Sources */,
-				AA000000000000003000004C /* DNSLeakService.swift in Sources */,
 				AA000000000000003000004D /* ThroughputService.swift in Sources */,
 				AA000000000000003000004E /* HistoryCard.swift in Sources */,
 				AA000000000000003000004F /* ThroughputCard.swift in Sources */,

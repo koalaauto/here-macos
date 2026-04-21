@@ -31,12 +31,16 @@ actor ThroughputService {
 
     init(
         downloadBytes: Int = 25_000_000,
-        uploadBytes: Int = 10_000_000,
+        uploadBytes: Int = 5_000_000,
         resultURL: URL? = nil
     ) {
         let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 30
-        config.timeoutIntervalForResource = 60
+        // Generous timeouts so a proxied upload (often slower than the pipe
+        // itself) can still complete. `timeoutIntervalForRequest` is the
+        // idle-between-packets timer; `timeoutIntervalForResource` bounds
+        // the whole transfer including the server's response.
+        config.timeoutIntervalForRequest = 60
+        config.timeoutIntervalForResource = 90
         config.waitsForConnectivity = false
         config.httpAdditionalHeaders = ["User-Agent": IPGuideProvider.userAgent]
         self.session = URLSession(configuration: config)

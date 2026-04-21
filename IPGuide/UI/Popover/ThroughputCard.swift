@@ -191,15 +191,15 @@ struct ThroughputCard: View {
     private func relativeTime(from past: Date, to now: Date) -> String {
         let secs = Int(now.timeIntervalSince(past))
         if secs < 60 {
-            return String(localized: "tested just now")
+            return String(localized: "Tested just now")
         }
         if secs < 3600 {
-            return String(format: String(localized: "tested %dm ago"), secs / 60)
+            return String(format: String(localized: "Tested %dm ago"), secs / 60)
         }
         if secs < 86_400 {
-            return String(format: String(localized: "tested %dh ago"), secs / 3600)
+            return String(format: String(localized: "Tested %dh ago"), secs / 3600)
         }
-        return String(format: String(localized: "tested %dd ago"), secs / 86_400)
+        return String(format: String(localized: "Tested %dd ago"), secs / 86_400)
     }
 
     // MARK: Observation
