@@ -6,26 +6,81 @@ struct PopoverRootView: View {
     @State private var state: IPState = .idle
     @State private var regionCode: String?
     @State private var lastFetchedAt: Date?
+    @State private var dnsStatus: DNSLeakStatus = .unknown
+    @State private var networkExpanded: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            ZStack {
-                content
-                    .blur(radius: showsLoadingOverlay ? 4 : 0)
-                    .animation(.easeInOut(duration: 0.2), value: showsLoadingOverlay)
-                if showsLoadingOverlay {
-                    loadingBadge
-                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+        VStack(alignment: .leading, spacing: 0) {
+            if case .mismatch(let info) = dnsStatus {
+                dnsLeakBanner(info: info)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .top).combined(with: .opacity),
+                        removal: .opacity
+                    ))
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                ZStack {
+                    content
+                        .blur(radius: showsLoadingOverlay ? 4 : 0)
+                        .animation(.easeInOut(duration: 0.2), value: showsLoadingOverlay)
+                    if showsLoadingOverlay {
+                        loadingBadge
+                            .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    }
+                }
+                .animation(.easeInOut(duration: 0.2), value: showsLoadingOverlay)
+
+                MetaFooter(state: state, lastFetchedAt: lastFetchedAt, onRefresh: refresh)
+                    .padding(.top, 2)
+            }
+            .padding(14)
+        }
+        .frame(width: 360, alignment: .top)
+        .animation(.easeInOut(duration: 0.25), value: dnsStatus.isLeak)
+        .task { await observeState() }
+        .task { await observeDNS() }
+    }
+
+    /// Slim yellow strip shown above the popover content when a DNS leak is
+    /// detected. Clicking "Details" expands the Network drawer inside the
+    /// Location card where the full DNS row lives.
+    private func dnsLeakBanner(info: DNSInfo) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(String(localized: "Potential DNS leak"))
+                    .font(.caption.weight(.semibold))
+                Text(String(
+                    format: String(localized: "DNS via %@, traffic via %@"),
+                    info.resolverCountryCode ?? "?",
+                    info.egressCountryCode
+                ))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            }
+            Spacer()
+            Button(String(localized: "Details")) {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    networkExpanded = true
                 }
             }
-            .animation(.easeInOut(duration: 0.2), value: showsLoadingOverlay)
-
-            MetaFooter(state: state, lastFetchedAt: lastFetchedAt, onRefresh: refresh)
-                .padding(.top, 2)
+            .buttonStyle(.borderless)
+            .font(.caption.weight(.semibold))
+            .pointerStyle(.link)
         }
-        .padding(14)
-        .frame(width: 360, alignment: .top)
-        .task { await observeState() }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.yellow.opacity(0.14))
+        .overlay(
+            Rectangle()
+                .fill(Color.yellow.opacity(0.4))
+                .frame(height: 0.5),
+            alignment: .bottom
+        )
     }
 
     private var showsLoadingOverlay: Bool {
@@ -76,11 +131,20 @@ struct PopoverRootView: View {
     @ViewBuilder
     private func moduleCard(_ module: PopoverModule, model: IPDataModel) -> some View {
         switch module {
-        case .location: LocationCard(model: model)
+        case .location:
+            LocationCard(
+                model: model,
+                dnsStatus: dnsStatus,
+                networkExpanded: $networkExpanded
+            )
         case .latency:
             if settings.latencyEnabled {
                 LatencyCard()
             }
+        case .history:
+            HistoryCard()
+        case .throughput:
+            ThroughputCard()
         }
     }
 
@@ -138,6 +202,12 @@ struct PopoverRootView: View {
             if let model = next.model {
                 regionCode = await environment.regionMapper.regionCode(for: model)
             }
+        }
+    }
+
+    private func observeDNS() async {
+        for await next in environment.dnsLeakService.stream() {
+            dnsStatus = next
         }
     }
 }

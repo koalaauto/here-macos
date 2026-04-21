@@ -4,9 +4,10 @@ import SwiftUI
 
 struct LocationCard: View {
     let model: IPDataModel
+    let dnsStatus: DNSLeakStatus
+    @Binding var networkExpanded: Bool
 
     @State private var mapHovering = false
-    @State private var networkExpanded = false
 
     private var cameraPosition: MapCameraPosition {
         .region(MKCoordinateRegion(
@@ -128,10 +129,75 @@ struct LocationCard: View {
                     CopyableRow(label: String(localized: "RIR"),
                                 value: model.network.autonomousSystem.rir,
                                 copyable: false)
+                    dnsRow
                 }
                 .padding(.top, 2)
             }
         }
+    }
+
+    // DNS resolver row — appears as the last line inside the Network drawer.
+    // Green dot + resolver info when aligned; orange dot + leak hint when
+    // the resolver's country disagrees with the egress country.
+    @ViewBuilder
+    private var dnsRow: some View {
+        switch dnsStatus {
+        case .unknown:
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(String(localized: "DNS"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 48, alignment: .leading)
+                Text(String(localized: "checking…"))
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                Spacer()
+            }
+
+        case .failed(let reason, _):
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(String(localized: "DNS"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 48, alignment: .leading)
+                Text(reason)
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                Spacer()
+            }
+
+        case .matches(let info), .mismatch(let info):
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(String(localized: "DNS"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 48, alignment: .leading)
+                Circle()
+                    .fill(info.matchesEgress ? Color.green : Color.orange)
+                    .frame(width: 7, height: 7)
+                Text(dnsSummary(info: info))
+                    .font(.caption)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Spacer()
+            }
+        }
+    }
+
+    private func dnsSummary(info: DNSInfo) -> String {
+        var parts: [String] = []
+        parts.append(info.resolverIP)
+        if let asn = info.resolverASNName {
+            parts.append(asn)
+        }
+        if let cc = info.resolverCountryCode {
+            if info.matchesEgress {
+                parts.append(cc)
+            } else {
+                parts.append("\(cc) ≠ \(info.egressCountryCode)")
+            }
+        }
+        return parts.joined(separator: " · ")
     }
 
     // MARK: Helpers
