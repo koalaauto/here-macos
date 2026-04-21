@@ -41,8 +41,23 @@ struct IPDataModel: Codable, Equatable, Sendable {
 }
 
 extension IPDataModel {
+    /// Preferred alpha-2 for flag and display.
+    ///
+    /// Resolution order:
+    /// 1. `location.country` (English name, e.g. "Taiwan") → alpha-2 via
+    ///    `CountryNameMapper`. This follows the IP's actual geo-egress.
+    /// 2. `network.autonomous_system.country` (ASN's registered country).
+    ///    This is the old behavior and kept as a safety net — for most
+    ///    IPs it matches, but for VPN nodes whose ASN is registered in a
+    ///    different country than the node itself runs (e.g. a Taiwan
+    ///    egress routed via an HK-registered ASN) it gives the wrong
+    ///    flag. The name-based path above is the authoritative answer
+    ///    when it resolves.
     var countryAlpha2: String {
-        network.autonomousSystem.country.uppercased()
+        if let fromLocation = CountryNameMapper.alpha2(for: location.country) {
+            return fromLocation
+        }
+        return network.autonomousSystem.country.uppercased()
     }
 
     var coordinate: CLLocationCoordinate2D {
