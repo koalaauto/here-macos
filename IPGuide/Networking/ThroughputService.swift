@@ -17,9 +17,17 @@ import Foundation
 /// at `didCompleteWithError` and returned from `runProbe`.
 actor ThroughputService {
     private let downloadBytes: Int
-    private let uploadBytes: Int
     private let estimatedDownloadDuration: TimeInterval = 4.0
-    private let estimatedUploadDuration: TimeInterval = 4.0
+    /// Longer than download because upload is split into sequential chunks
+    /// (see `probeUpload` for why). At 2-5 Mbps typical VPN upload this lands
+    /// around 8-20 s; progress bar just sits at 100 % if the pipe is slower.
+    private let estimatedUploadDuration: TimeInterval = 10.0
+
+    /// Upload is split into N chunks so the live number reflects real
+    /// throughput samples (each chunk's end-to-end timing). See the note in
+    /// `probeUpload` for the full reasoning.
+    private let uploadChunkCount = 5
+    private let uploadChunkBytes = 1_000_000
 
     private var state: ThroughputStatus
     private var continuations: [UUID: AsyncStream<ThroughputStatus>.Continuation] = [:]
@@ -28,11 +36,9 @@ actor ThroughputService {
 
     init(
         downloadBytes: Int = 25_000_000,
-        uploadBytes: Int = 5_000_000,
         resultURL: URL? = nil
     ) {
         self.downloadBytes = downloadBytes
-        self.uploadBytes = uploadBytes
         let url = resultURL ?? Self.defaultResultURL()
         self.resultURL = url
         self.state = .idle(lastResult: Self.loadResult(from: url))
@@ -118,52 +124,90 @@ actor ThroughputService {
         return await runProbe(request: request)
     }
 
+    /// Upload probe — runs `uploadChunkCount` sequential POST requests of
+    /// `uploadChunkBytes` each, rather than one big POST.
+    ///
+    /// Why not one big streamed POST? Because `didSendBodyData` fires as
+    /// bytes enter the kernel socket buffer, NOT as the peer acknowledges
+    /// them. On a slow uplink the sequence looks like:
+    /// 1. URLSession hands the whole payload to the kernel in ~100 ms
+    ///    (bus speed) → first progress callback reports something like
+    ///    "5 MB in 0.2 s" → apparent 200 Mbps (entirely fictional).
+    /// 2. Kernel buffer is full; URLSession blocks for many seconds
+    ///    waiting for TCP ACKs. No more progress callbacks fire.
+    /// 3. `didCompleteWithError` lands eventually with the real total
+    ///    time, so the FINAL number is correct — but the live number
+    ///    spent the whole test lying.
+    ///
+    /// Sequential small POSTs sidestep this: each `await session.data(for:)`
+    /// only resumes when the server returns a response, which in turn only
+    /// happens after the full POST body has actually reached the server.
+    /// So each chunk's end-to-end timing is a truthful throughput sample.
+    /// We report the running aggregate after every chunk so the UI ticks
+    /// up with real data.
     private func probeUpload() async -> Double? {
         guard let url = URL(string: "https://speed.cloudflare.com/__up") else { return nil }
 
-        // Random bytes so no HTTP-layer compression inflates the reading.
-        var payload = Data(count: uploadBytes)
-        payload.withUnsafeMutableBytes { buf in
-            guard let base = buf.baseAddress else { return }
-            arc4random_buf(base, buf.count)
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = 30
+        config.timeoutIntervalForResource = 60
+        config.waitsForConnectivity = false
+        config.httpAdditionalHeaders = ["User-Agent": IPGuideProvider.userAgent]
+        let session = URLSession(configuration: config)
+        defer { session.finishTasksAndInvalidate() }
+
+        var totalBytes: Int64 = 0
+        var totalElapsed: TimeInterval = 0
+
+        for chunk in 0..<uploadChunkCount {
+            // Fresh random bytes per chunk so intermediaries can't cache or
+            // compress us into fake speed.
+            var payload = Data(count: uploadChunkBytes)
+            payload.withUnsafeMutableBytes { buf in
+                guard let base = buf.baseAddress else { return }
+                arc4random_buf(base, buf.count)
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+            request.httpBody = payload
+
+            let start = Date()
+            do {
+                _ = try await session.data(for: request)
+            } catch {
+                Log.network.debug(
+                    "Throughput upload chunk \(chunk) failed: \(error.localizedDescription, privacy: .public)"
+                )
+                // Partial success: if we already have some samples, report
+                // what we measured rather than calling the whole test a bust.
+                if totalBytes > 0 && totalElapsed > 0 {
+                    return Double(totalBytes) * 8 / totalElapsed / 1_000_000
+                }
+                return nil
+            }
+            let elapsed = Date().timeIntervalSince(start)
+
+            totalBytes += Int64(uploadChunkBytes)
+            totalElapsed += elapsed
+
+            // Running aggregate Mbps — each new chunk's sample pulls the
+            // number toward the steady-state value rather than replacing it.
+            let mbps = Double(totalBytes) * 8 / totalElapsed / 1_000_000
+            applyLiveMbps(mbps)
         }
 
-        // Stage the payload to a temp file and hand it to
-        // `uploadTask(with:fromFile:)`. Without this — i.e. when the body
-        // is set via `URLRequest.httpBody` — URLSession hands the whole
-        // buffer to CFNetwork in one go and `didSendBodyData` jumps from
-        // 0 to total in a single callback before the bytes are actually
-        // on the wire, so the live Mbps number can't tick during the
-        // upload. `fromFile:` forces a streaming read that gives us
-        // per-chunk progress callbacks as the socket drains.
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("ipguide_up_\(UUID().uuidString).bin")
-        do {
-            try payload.write(to: tempURL)
-        } catch {
-            Log.network.debug(
-                "Throughput upload: tempfile write failed: \(error.localizedDescription, privacy: .public)"
-            )
-            return nil
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-
-        let mbps = await runProbe(request: request, uploadFromFile: tempURL)
-        try? FileManager.default.removeItem(at: tempURL)
-        return mbps
+        guard totalElapsed > 0 else { return nil }
+        return Double(totalBytes) * 8 / totalElapsed / 1_000_000
     }
 
-    /// Shared probe driver: spins up a `SpeedProbe` (URLSession delegate),
+    /// Download probe driver — spins up a `SpeedProbe` (URLSession delegate
+    /// that watches `didReceive(data:)`, which is a reliable real-time
+    /// throughput signal because bytes arrive from the peer over the wire),
     /// forwards the live Mbps estimate back into our state, and resolves
     /// the continuation with the final measured Mbps.
-    ///
-    /// Pass `uploadFromFile` for upload probes so the session pulls body
-    /// bytes from disk in chunks (see the note in `probeUpload`); omit it
-    /// for download probes, which use a plain data task.
-    private func runProbe(request: URLRequest, uploadFromFile: URL? = nil) async -> Double? {
+    private func runProbe(request: URLRequest) async -> Double? {
         await withCheckedContinuation { (cont: CheckedContinuation<Double?, Never>) in
             let probe = SpeedProbe(
                 onProgress: { [weak self] mbps in
@@ -173,11 +217,7 @@ actor ThroughputService {
                     cont.resume(returning: finalMbps)
                 }
             )
-            if let fileURL = uploadFromFile {
-                probe.runUpload(request: request, fromFile: fileURL)
-            } else {
-                probe.runDownload(request: request)
-            }
+            probe.runDownload(request: request)
         }
     }
 
@@ -257,14 +297,22 @@ actor ThroughputService {
     }
 }
 
-// MARK: - URLSession delegate-based probe
+// MARK: - URLSession delegate-based download probe
 
-/// One-shot URLSession wrapper that streams Mbps progress callbacks during
-/// a transfer and reports the measured final Mbps when the transfer ends.
+/// One-shot URLSession wrapper used only for DOWNLOAD probes. Streams Mbps
+/// progress callbacks as response bytes arrive and reports the measured
+/// final Mbps at completion.
 ///
-/// Progress is throttled internally to roughly one emit every 200 ms so we
-/// don't push the SwiftUI re-render loop on every packet. The session is
-/// owned by the probe and invalidated in `didCompleteWithError`.
+/// For downloads, `didReceive(data:)` is a reliable real-time throughput
+/// signal because bytes arrive from the peer across the wire. For uploads
+/// the analogous delegate method (`didSendBodyData`) is not useful because
+/// it fires when bytes enter the kernel socket buffer, not when the peer
+/// ACKs them — so we use sequential small POSTs with end-to-end timing
+/// instead (see `ThroughputService.probeUpload`).
+///
+/// Progress is throttled to ~5 Hz so we don't push the SwiftUI update loop
+/// on every packet. The session is owned by the probe and invalidated in
+/// `didCompleteWithError`.
 ///
 /// `@unchecked Sendable` is safe here because all mutable state sits behind
 /// an `NSLock` and the delegate callbacks land on URLSession's private
@@ -300,26 +348,9 @@ private final class SpeedProbe: NSObject, URLSessionDataDelegate, @unchecked Sen
         task.resume()
     }
 
-    func runUpload(request: URLRequest, fromFile: URL) {
-        let task = session.uploadTask(with: request, fromFile: fromFile)
-        task.resume()
-    }
-
     // Download: response body arrives in chunks.
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         let b = addBytes(Int64(data.count))
-        maybeEmit(bytes: b)
-    }
-
-    // Upload: body bytes sent; `totalBytesSent` is absolute.
-    func urlSession(
-        _ session: URLSession,
-        task: URLSessionTask,
-        didSendBodyData bytesSent: Int64,
-        totalBytesSent: Int64,
-        totalBytesExpectedToSend: Int64
-    ) {
-        let b = setBytes(totalBytesSent)
         maybeEmit(bytes: b)
     }
 
@@ -338,7 +369,7 @@ private final class SpeedProbe: NSObject, URLSessionDataDelegate, @unchecked Sen
 
         if let error {
             Log.network.debug(
-                "Throughput probe failed: \(error.localizedDescription, privacy: .public)"
+                "Throughput download probe failed: \(error.localizedDescription, privacy: .public)"
             )
             onComplete(nil)
             return
@@ -356,14 +387,6 @@ private final class SpeedProbe: NSObject, URLSessionDataDelegate, @unchecked Sen
     private func addBytes(_ delta: Int64) -> Int64 {
         lock.lock()
         bytes += delta
-        let b = bytes
-        lock.unlock()
-        return b
-    }
-
-    private func setBytes(_ total: Int64) -> Int64 {
-        lock.lock()
-        bytes = total
         let b = bytes
         lock.unlock()
         return b
