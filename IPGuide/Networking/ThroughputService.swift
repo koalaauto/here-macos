@@ -120,23 +120,50 @@ actor ThroughputService {
 
     private func probeUpload() async -> Double? {
         guard let url = URL(string: "https://speed.cloudflare.com/__up") else { return nil }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-        // Random bytes to avoid intermediate compression inflating the reading.
+
+        // Random bytes so no HTTP-layer compression inflates the reading.
         var payload = Data(count: uploadBytes)
         payload.withUnsafeMutableBytes { buf in
             guard let base = buf.baseAddress else { return }
             arc4random_buf(base, buf.count)
         }
-        request.httpBody = payload
-        return await runProbe(request: request)
+
+        // Stage the payload to a temp file and hand it to
+        // `uploadTask(with:fromFile:)`. Without this — i.e. when the body
+        // is set via `URLRequest.httpBody` — URLSession hands the whole
+        // buffer to CFNetwork in one go and `didSendBodyData` jumps from
+        // 0 to total in a single callback before the bytes are actually
+        // on the wire, so the live Mbps number can't tick during the
+        // upload. `fromFile:` forces a streaming read that gives us
+        // per-chunk progress callbacks as the socket drains.
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ipguide_up_\(UUID().uuidString).bin")
+        do {
+            try payload.write(to: tempURL)
+        } catch {
+            Log.network.debug(
+                "Throughput upload: tempfile write failed: \(error.localizedDescription, privacy: .public)"
+            )
+            return nil
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+
+        let mbps = await runProbe(request: request, uploadFromFile: tempURL)
+        try? FileManager.default.removeItem(at: tempURL)
+        return mbps
     }
 
     /// Shared probe driver: spins up a `SpeedProbe` (URLSession delegate),
     /// forwards the live Mbps estimate back into our state, and resolves
     /// the continuation with the final measured Mbps.
-    private func runProbe(request: URLRequest) async -> Double? {
+    ///
+    /// Pass `uploadFromFile` for upload probes so the session pulls body
+    /// bytes from disk in chunks (see the note in `probeUpload`); omit it
+    /// for download probes, which use a plain data task.
+    private func runProbe(request: URLRequest, uploadFromFile: URL? = nil) async -> Double? {
         await withCheckedContinuation { (cont: CheckedContinuation<Double?, Never>) in
             let probe = SpeedProbe(
                 onProgress: { [weak self] mbps in
@@ -146,7 +173,11 @@ actor ThroughputService {
                     cont.resume(returning: finalMbps)
                 }
             )
-            probe.run(request: request)
+            if let fileURL = uploadFromFile {
+                probe.runUpload(request: request, fromFile: fileURL)
+            } else {
+                probe.runDownload(request: request)
+            }
         }
     }
 
@@ -264,8 +295,13 @@ private final class SpeedProbe: NSObject, URLSessionDataDelegate, @unchecked Sen
         self.session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
     }
 
-    func run(request: URLRequest) {
+    func runDownload(request: URLRequest) {
         let task = session.dataTask(with: request)
+        task.resume()
+    }
+
+    func runUpload(request: URLRequest, fromFile: URL) {
+        let task = session.uploadTask(with: request, fromFile: fromFile)
         task.resume()
     }
 
