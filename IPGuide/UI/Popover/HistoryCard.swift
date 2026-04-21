@@ -74,23 +74,30 @@ struct HistoryCard: View {
     }
 
     private var chain: some View {
-        // Anchor the chain to the RIGHT edge of the card — newest chip sits
-        // at the far right (matches the Latency bar, where the most recent
-        // sample is the rightmost cell). As you read leftward, you travel
-        // back in time. Events older than `maxChips` are quietly dropped;
-        // the total `N changes` counter in the header still reflects them.
+        // Distribute chips edge-to-edge: first chip pinned to the leading
+        // edge, last chip pinned to the trailing edge, remaining space
+        // shared evenly around the arrows between them. Flexible `Spacer`s
+        // flanking each arrow do the work — HStack gives each Spacer an
+        // equal slice of the residual width, so the visual gaps match
+        // regardless of how many events exist.
+        //
+        // Newest still lands on the right (Latency-style time axis); older
+        // events beyond `maxChips` get dropped from the visible chain,
+        // with the header's `N changes` counter reflecting the true total.
         let displayed = Array(events.suffix(maxChips))
-        return HStack(spacing: 6) {
-            Spacer(minLength: 0)
+        return HStack(spacing: 0) {
             ForEach(Array(displayed.enumerated()), id: \.element.id) { index, event in
-                chip(for: event, isCurrent: index == displayed.count - 1)
-                if index < displayed.count - 1 {
+                if index > 0 {
+                    Spacer(minLength: 4)
                     Image(systemName: "arrow.right")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
+                    Spacer(minLength: 4)
                 }
+                chip(for: event, isCurrent: index == displayed.count - 1)
             }
         }
+        .frame(maxWidth: .infinity)
     }
 
     private func chip(for event: IPChangeEvent, isCurrent: Bool) -> some View {
