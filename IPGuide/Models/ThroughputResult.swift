@@ -26,11 +26,15 @@ enum ThroughputStatus: Sendable, Equatable {
     /// - `completedDownloadMbps` is set to the just-measured download value
     ///   once the download phase finishes, so the UI can flip the download
     ///   block from "…" to the real reading while the upload phase runs
+    /// - `liveMbps` is a rolling estimate for the active phase, pushed every
+    ///   ~200 ms from the URLSession progress delegate. The UI renders this
+    ///   in place of "…" so the number ticks up as bytes transfer.
     case probing(
         phase: Direction,
         startedAt: Date,
         estimatedDuration: TimeInterval,
-        completedDownloadMbps: Double?
+        completedDownloadMbps: Double?,
+        liveMbps: Double?
     )
 
     case failed(reason: String, lastResult: ThroughputResult?)

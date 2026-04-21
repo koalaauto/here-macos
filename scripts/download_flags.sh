@@ -68,6 +68,12 @@ for code in "${CODES[@]}"; do
 
     mkdir -p "$imageset"
 
+    # `template-rendering-intent: original` pins each imageset to full-color
+    # rendering. Without it, Xcode's automatic detection can in some cases
+    # interpret a flag as a template image, which would collapse the flag
+    # to a tinted silhouette based on the alpha channel — hiding visible
+    # features (e.g. Taiwan's blue canton + sun) and making two unrelated
+    # flags look near-identical in the menu bar.
     cat > "$imageset/Contents.json" <<EOF
 {
   "images" : [
@@ -80,6 +86,9 @@ for code in "${CODES[@]}"; do
   "info" : {
     "author" : "xcode",
     "version" : 1
+  },
+  "properties" : {
+    "template-rendering-intent" : "original"
   }
 }
 EOF
