@@ -6,6 +6,7 @@ struct LocationCard: View {
     let model: IPDataModel
 
     @State private var mapHovering = false
+    @State private var networkExpanded = false
 
     private var cameraPosition: MapCameraPosition {
         .region(MKCoordinateRegion(
@@ -20,9 +21,13 @@ struct LocationCard: View {
             VStack(alignment: .leading, spacing: 10) {
                 mapView
                 timezoneRow
+                Divider().padding(.vertical, 2)
+                networkDisclosure
             }
         }
     }
+
+    // MARK: Map
 
     private var mapView: some View {
         Map(initialPosition: cameraPosition, interactionModes: []) {
@@ -52,6 +57,8 @@ struct LocationCard: View {
         .onTapGesture { openInMaps() }
     }
 
+    // MARK: Timezone
+
     private var timezoneRow: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text(String(localized: "Timezone"))
@@ -70,6 +77,64 @@ struct LocationCard: View {
             }
         }
     }
+
+    // MARK: Custom network disclosure (whole header row clickable)
+
+    private var networkDisclosure: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                networkExpanded.toggle()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(networkExpanded ? 90 : 0))
+                        // Instant rotation — no `.animation` modifier, because
+                        // that would also catch the 1-2pt y-shift the HStack
+                        // produces when the ASN summary appears/disappears,
+                        // making the chevron look like it "jumps" vertically.
+                    Text(String(localized: "Network"))
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                    if !networkExpanded {
+                        Text(model.asnLabel)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .pointerStyle(.link)
+
+            if networkExpanded {
+                VStack(alignment: .leading, spacing: 6) {
+                    CopyableRow(label: String(localized: "CIDR"),
+                                value: model.network.cidr,
+                                monospaced: true,
+                                copyable: false)
+                    CopyableRow(label: String(localized: "ASN"),
+                                value: model.asnLabel,
+                                copyable: false)
+                    CopyableRow(label: String(localized: "Org"),
+                                value: model.network.autonomousSystem.organization,
+                                copyable: false)
+                    CopyableRow(label: String(localized: "RIR"),
+                                value: model.network.autonomousSystem.rir,
+                                copyable: false)
+                }
+                .padding(.top, 2)
+            }
+        }
+    }
+
+    // MARK: Helpers
 
     private var timezoneAbbreviation: String {
         guard let tz = TimeZone(identifier: model.location.timezone) else {

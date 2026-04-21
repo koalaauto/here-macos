@@ -17,9 +17,11 @@ Useful when hopping between VPNs, proxies, or traveling — you can tell at a gl
   - Large copyable IP address.
   - Mini MapKit location preview (tap to open in Maps).
   - Timezone abbreviation + live local-time clock.
-  - Network info: CIDR, ASN + organization, RIR.
+  - Expandable **Network** drawer inside the Location card: CIDR, ASN + organization, RIR — collapsed by default with an inline ASN summary.
   - Manual refresh and "last updated" relative timer that updates every second.
   - Click the flag to open [ip.guide](https://ip.guide/) in your browser.
+- **Latency widget** — horizontal bar of 30 probes with color-coded tiers (green <150 ms, yellow 150–500 ms, orange 500–1000 ms, red >1000 ms, purple for timeout). Header shows last / avg / max. Hover a cell for an instant tooltip with the exact timestamp + reading. Configurable target, interval, and slot count.
+- **Reorderable popover modules** — move Location and Latency up/down in Settings → Modules.
 - **Automatic refresh** — configurable every 30s / 1m / 5m / 10m / 30m / 1h.
 - **Smart re-fetch triggers** on network change (Wi-Fi switch, VPN toggle) and wake-from-sleep.
 - **Offline-aware** — caches last known data and shows a staleness badge when readings get old.

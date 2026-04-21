@@ -8,7 +8,9 @@ final class AppEnvironment {
     let sleepWakeObserver: SleepWakeObserver
     let ipService: IPService
     let regionMapper: RegionMapper
+    let latencyService: LatencyService
     let scheduler: RefreshScheduler
+    let latencyScheduler: LatencyScheduler
     let launchAtLogin: LaunchAtLoginService
 
     @MainActor
@@ -19,8 +21,18 @@ final class AppEnvironment {
         let sleepWakeObserver = SleepWakeObserver()
         let regionMapper = RegionMapper()
         let ipService = IPService(provider: IPGuideProvider(), cache: cache)
+        let latencyService = LatencyService(
+            capacity: settings.latencySlotCount,
+            target: settings.latencyProbeTarget.url
+        )
         let scheduler = RefreshScheduler(
             ipService: ipService,
+            settings: settings,
+            networkMonitor: networkMonitor,
+            sleepWakeObserver: sleepWakeObserver
+        )
+        let latencyScheduler = LatencyScheduler(
+            service: latencyService,
             settings: settings,
             networkMonitor: networkMonitor,
             sleepWakeObserver: sleepWakeObserver
@@ -33,7 +45,9 @@ final class AppEnvironment {
         self.sleepWakeObserver = sleepWakeObserver
         self.regionMapper = regionMapper
         self.ipService = ipService
+        self.latencyService = latencyService
         self.scheduler = scheduler
+        self.latencyScheduler = latencyScheduler
         self.launchAtLogin = launchAtLogin
     }
 
@@ -42,12 +56,14 @@ final class AppEnvironment {
         networkMonitor.start()
         sleepWakeObserver.start()
         scheduler.start()
+        latencyScheduler.start()
         Task { await ipService.refresh() }
     }
 
     @MainActor
     func shutdown() {
         scheduler.stop()
+        latencyScheduler.stop()
         sleepWakeObserver.stop()
         networkMonitor.stop()
     }

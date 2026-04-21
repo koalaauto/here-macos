@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PopoverRootView: View {
     @Environment(AppEnvironment.self) private var environment
+    @Environment(SettingsStore.self) private var settings
     @State private var state: IPState = .idle
     @State private var regionCode: String?
     @State private var lastFetchedAt: Date?
@@ -66,8 +67,20 @@ struct PopoverRootView: View {
     private func loadedStack(model: IPDataModel) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             IPHeroView(model: model, regionCode: regionCode, fetchedAt: lastFetchedAt)
-            LocationCard(model: model)
-            NetworkCard(model: model)
+            ForEach(settings.popoverModuleOrder) { module in
+                moduleCard(module, model: model)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func moduleCard(_ module: PopoverModule, model: IPDataModel) -> some View {
+        switch module {
+        case .location: LocationCard(model: model)
+        case .latency:
+            if settings.latencyEnabled {
+                LatencyCard()
+            }
         }
     }
 

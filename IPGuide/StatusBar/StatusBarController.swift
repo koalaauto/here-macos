@@ -26,6 +26,13 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         self.popoverHost = PopoverHost(environment: environment)
         super.init()
 
+        // Persist the status item's position/visibility across launches so the
+        // system keeps it in the same slot — helps when the menu bar is tight
+        // (notched displays, many status items).
+        statusItem.autosaveName = "app.ipguide.statusItem"
+        statusItem.isVisible = true
+        statusItem.behavior = []
+
         popoverHost.popover.behavior = .applicationDefined
         popoverHost.popover.delegate = self
 
