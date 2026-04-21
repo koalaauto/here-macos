@@ -51,6 +51,12 @@ struct ModulesSettingsView: View {
                         Text(endpoint.label).tag(endpoint)
                     }
                 }
+                .onChange(of: settings.throughputEndpoint) { _, _ in
+                    // Switching away from .custom is a good moment to
+                    // normalize — if the user leaves garbage in the field
+                    // and flips to another source, don't let it sit there.
+                    normalizeCustomURL()
+                }
 
                 if settings.throughputEndpoint == .custom {
                     LabeledContent {
@@ -62,6 +68,7 @@ struct ModulesSettingsView: View {
                             .onChange(of: customURLFocused) { _, isFocused in
                                 if !isFocused { normalizeCustomURL() }
                             }
+                            .onSubmit { normalizeCustomURL() }
                     } label: {
                         Text(String(localized: "URL"))
                     }
@@ -107,7 +114,7 @@ struct ModulesSettingsView: View {
         case .cloudflare:
             return String(localized: "Downloads 100 MB from speed.cloudflare.com. Blocked on some networks that SNI-filter Cloudflare's speed test host.")
         case .custom:
-            return String(localized: "Any HTTPS file works. Larger files (≥ 10 MB) give a more stable reading. Blank or invalid URLs fall back to Cachefly.")
+            return String(localized: "Any HTTPS file works. Larger files (≥ 10 MB) give a more stable reading. Blank or invalid URLs produce an error — no silent fallback.")
         }
     }
 

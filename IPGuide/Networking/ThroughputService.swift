@@ -46,6 +46,16 @@ actor ThroughputService {
         inflight = nil
     }
 
+    /// Surface a failure state without a network call. Used when the
+    /// current endpoint settings can't produce a usable URL (e.g. Custom
+    /// URL is blank or malformed) — we'd rather show the user why nothing
+    /// ran than silently substitute a different source.
+    func reportLocalFailure(reason: String) {
+        if inflight != nil { return }
+        state = .failed(reason: reason, lastResult: state.lastResult)
+        emit()
+    }
+
     // MARK: Implementation
 
     private func performTest(url: URL) async {

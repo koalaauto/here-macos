@@ -27,6 +27,10 @@ struct ThroughputCard: View {
 
     @State private var status: ThroughputStatus = .idle(lastResult: nil)
 
+    private static let invalidCustomURLMessage = String(
+        localized: "Custom URL isn't a valid https:// URL."
+    )
+
     var body: some View {
         CardContainer {
             VStack(alignment: .leading, spacing: 10) {
@@ -105,8 +109,7 @@ struct ThroughputCard: View {
         HStack {
             Spacer()
             Button {
-                let url = resolvedURL()
-                Task { await environment.throughputService.runTest(url: url) }
+                handleRunTap()
             } label: {
                 if status.isRunning {
                     HStack(spacing: 4) {
@@ -162,25 +165,45 @@ struct ThroughputCard: View {
         }
     }
 
-    /// Pick the URL for the current test from the selected endpoint. For
-    /// a custom URL that's blank or doesn't parse as https, quietly fall
-    /// back to the default preset (Cachefly) — the failure would surface
-    /// as a connection error in the failed state otherwise, which is
-    /// confusing when the user just hasn't typed a URL yet.
-    private func resolvedURL() -> URL {
+    /// URL for the currently-selected source. Returns `nil` only when the
+    /// user is on `.custom` and their URL isn't a valid `https://` URL —
+    /// we deliberately do NOT silently substitute a preset, so invalid
+    /// input surfaces as a real failure rather than a ghost test against
+    /// a different host.
+    private func resolvedURL() -> URL? {
         switch settings.throughputEndpoint {
         case .cachefly, .cloudflare:
             return settings.throughputEndpoint.presetURL
-                ?? ThroughputEndpoint.cachefly.presetURL!
         case .custom:
             let trimmed = settings.throughputCustomURL
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmed.isEmpty,
-               let url = URL(string: trimmed),
-               url.scheme?.lowercased() == "https" {
-                return url
+            guard !trimmed.isEmpty,
+                  let url = URL(string: trimmed),
+                  url.scheme?.lowercased() == "https",
+                  url.host?.isEmpty == false else {
+                return nil
             }
-            return ThroughputEndpoint.cachefly.presetURL!
+            return url
+        }
+    }
+
+    /// Dispatch a Run Test click. If the user is on `.custom` and the
+    /// field holds something that isn't a usable URL, clear the field
+    /// (matches the on-blur "clear invalid input" rule) and surface a
+    /// failure state instead of running the probe against a substitute.
+    private func handleRunTap() {
+        if let url = resolvedURL() {
+            Task { await environment.throughputService.runTest(url: url) }
+            return
+        }
+        if settings.throughputEndpoint == .custom,
+           !settings.throughputCustomURL.isEmpty {
+            settings.throughputCustomURL = ""
+        }
+        Task {
+            await environment.throughputService.reportLocalFailure(
+                reason: Self.invalidCustomURLMessage
+            )
         }
     }
 

@@ -54,7 +54,8 @@
 "Custom URL" = "Custom URL";
 "Downloads a 100 MB test file from Cachefly's CDN. Widest global reach; default." = "Downloads a 100 MB test file from Cachefly's CDN. Widest global reach; default.";
 "Downloads 100 MB from speed.cloudflare.com. Blocked on some networks that SNI-filter Cloudflare's speed test host." = "Downloads 100 MB from speed.cloudflare.com. Blocked on some networks that SNI-filter Cloudflare's speed test host.";
-"Any HTTPS file works. Larger files (≥ 10 MB) give a more stable reading. Blank or invalid URLs fall back to Cachefly." = "Any HTTPS file works. Larger files (≥ 10 MB) give a more stable reading. Blank or invalid URLs fall back to Cachefly.";
+"Any HTTPS file works. Larger files (≥ 10 MB) give a more stable reading. Blank or invalid URLs produce an error — no silent fallback." = "Any HTTPS file works. Larger files (≥ 10 MB) give a more stable reading. Blank or invalid URLs produce an error — no silent fallback.";
+"Custom URL isn't a valid https:// URL." = "Custom URL isn't a valid https:// URL.";
 
 /* Popover — Location card */
 "Copy" = "Copy";
