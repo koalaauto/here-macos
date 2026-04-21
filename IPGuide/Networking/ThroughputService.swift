@@ -72,10 +72,20 @@ actor ThroughputService {
             liveProgress: 0
         )
         emit()
-        let download = await probeDownload()
+        let downloadResult = await probeDownload()
 
-        guard let downMbps = download else {
-            state = .failed(reason: String(localized: "Download test failed"), lastResult: priorResult)
+        let downMbps: Double
+        switch downloadResult {
+        case .success(let value):
+            downMbps = value
+        case .failure(let error):
+            state = .failed(
+                reason: Self.failureReason(
+                    prefix: String(localized: "Download"),
+                    error: error
+                ),
+                lastResult: priorResult
+            )
             emit()
             return
         }
@@ -89,10 +99,20 @@ actor ThroughputService {
             liveProgress: 0
         )
         emit()
-        let upload = await probeUpload()
+        let uploadResult = await probeUpload()
 
-        guard let upMbps = upload else {
-            state = .failed(reason: String(localized: "Upload test failed"), lastResult: priorResult)
+        let upMbps: Double
+        switch uploadResult {
+        case .success(let value):
+            upMbps = value
+        case .failure(let error):
+            state = .failed(
+                reason: Self.failureReason(
+                    prefix: String(localized: "Upload"),
+                    error: error
+                ),
+                lastResult: priorResult
+            )
             emit()
             return
         }
@@ -107,9 +127,9 @@ actor ThroughputService {
         emit()
     }
 
-    private func probeDownload() async -> Double? {
+    private func probeDownload() async -> Result<Double, Error> {
         guard let url = URL(string: "https://speed.cloudflare.com/__down?bytes=\(downloadBytes)") else {
-            return nil
+            return .failure(URLError(.badURL))
         }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -137,8 +157,10 @@ actor ThroughputService {
     /// So each chunk's end-to-end timing is a truthful throughput sample.
     /// We report the running aggregate after every chunk so the UI ticks
     /// up with real data.
-    private func probeUpload() async -> Double? {
-        guard let url = URL(string: "https://speed.cloudflare.com/__up") else { return nil }
+    private func probeUpload() async -> Result<Double, Error> {
+        guard let url = URL(string: "https://speed.cloudflare.com/__up") else {
+            return .failure(URLError(.badURL))
+        }
 
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = 30
@@ -169,15 +191,15 @@ actor ThroughputService {
             do {
                 _ = try await session.data(for: request)
             } catch {
-                Log.network.debug(
+                Log.network.error(
                     "Throughput upload chunk \(chunk) failed: \(error.localizedDescription, privacy: .public)"
                 )
                 // Partial success: if we already have some samples, report
                 // what we measured rather than calling the whole test a bust.
                 if totalBytes > 0 && totalElapsed > 0 {
-                    return Double(totalBytes) * 8 / totalElapsed / 1_000_000
+                    return .success(Double(totalBytes) * 8 / totalElapsed / 1_000_000)
                 }
-                return nil
+                return .failure(error)
             }
             let elapsed = Date().timeIntervalSince(start)
 
@@ -193,8 +215,8 @@ actor ThroughputService {
             applyLiveProgress(mbps: mbps, progress: progress)
         }
 
-        guard totalElapsed > 0 else { return nil }
-        return Double(totalBytes) * 8 / totalElapsed / 1_000_000
+        guard totalElapsed > 0 else { return .failure(URLError(.zeroByteResource)) }
+        return .success(Double(totalBytes) * 8 / totalElapsed / 1_000_000)
     }
 
     /// Download probe driver — spins up a `SpeedProbe` (URLSession delegate
@@ -202,9 +224,9 @@ actor ThroughputService {
     /// throughput signal because bytes arrive from the peer over the wire),
     /// forwards the live Mbps + byte progress back into our state, and
     /// resolves the continuation with the final measured Mbps.
-    private func runProbe(request: URLRequest) async -> Double? {
+    private func runProbe(request: URLRequest) async -> Result<Double, Error> {
         let totalBytes = downloadBytes
-        return await withCheckedContinuation { (cont: CheckedContinuation<Double?, Never>) in
+        return await withCheckedContinuation { (cont: CheckedContinuation<Result<Double, Error>, Never>) in
             let probe = SpeedProbe(
                 onProgress: { [weak self] mbps, bytes in
                     // Real byte-based progress: bytes received divided by
@@ -213,8 +235,8 @@ actor ThroughputService {
                     let progress = min(1.0, max(0.0, Double(bytes) / Double(totalBytes)))
                     Task { await self?.applyLiveProgress(mbps: mbps, progress: progress) }
                 },
-                onComplete: { finalMbps in
-                    cont.resume(returning: finalMbps)
+                onComplete: { result in
+                    cont.resume(returning: result)
                 }
             )
             probe.runDownload(request: request)
@@ -279,6 +301,41 @@ actor ThroughputService {
         }
     }
 
+    /// Translate a URLSession failure into a user-visible one-line reason.
+    /// Picks a short phrase for the common `URLError.Code` values so the
+    /// failure pill in the card actually tells you what's wrong (e.g.
+    /// "Download: TLS handshake failed" vs just "Download test failed"),
+    /// and falls through to `localizedDescription` for anything else.
+    private static func failureReason(prefix: String, error: Error) -> String {
+        let detail: String
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .notConnectedToInternet:
+                detail = String(localized: "no internet")
+            case .networkConnectionLost:
+                detail = String(localized: "connection lost")
+            case .timedOut:
+                detail = String(localized: "timed out")
+            case .cannotFindHost, .dnsLookupFailed:
+                detail = String(localized: "can't reach host")
+            case .cannotConnectToHost:
+                detail = String(localized: "host refused")
+            case .secureConnectionFailed, .serverCertificateUntrusted,
+                 .serverCertificateHasBadDate, .serverCertificateHasUnknownRoot,
+                 .serverCertificateNotYetValid, .clientCertificateRejected,
+                 .clientCertificateRequired:
+                detail = String(localized: "TLS handshake failed")
+            case .zeroByteResource:
+                detail = String(localized: "empty response")
+            default:
+                detail = urlError.localizedDescription
+            }
+        } else {
+            detail = error.localizedDescription
+        }
+        return "\(prefix): \(detail)"
+    }
+
     private static func defaultResultURL() -> URL {
         let supportDir: URL
         do {
@@ -324,11 +381,11 @@ private final class SpeedProbe: NSObject, URLSessionDataDelegate, @unchecked Sen
     private var lastEmit = Date.distantPast
     private var finished = false
     private let onProgress: @Sendable (_ mbps: Double, _ bytes: Int64) -> Void
-    private let onComplete: @Sendable (Double?) -> Void
+    private let onComplete: @Sendable (Result<Double, Error>) -> Void
 
     init(
         onProgress: @escaping @Sendable (_ mbps: Double, _ bytes: Int64) -> Void,
-        onComplete: @escaping @Sendable (Double?) -> Void
+        onComplete: @escaping @Sendable (Result<Double, Error>) -> Void
     ) {
         self.onProgress = onProgress
         self.onComplete = onComplete
@@ -367,18 +424,18 @@ private final class SpeedProbe: NSObject, URLSessionDataDelegate, @unchecked Sen
         session.finishTasksAndInvalidate()
 
         if let error {
-            Log.network.debug(
+            Log.network.error(
                 "Throughput download probe failed: \(error.localizedDescription, privacy: .public)"
             )
-            onComplete(nil)
+            onComplete(.failure(error))
             return
         }
         let elapsed = Date().timeIntervalSince(startedAt)
         guard elapsed > 0 else {
-            onComplete(nil)
+            onComplete(.failure(URLError(.zeroByteResource)))
             return
         }
-        onComplete(Double(b) * 8 / elapsed / 1_000_000)
+        onComplete(.success(Double(b) * 8 / elapsed / 1_000_000))
     }
 
     // MARK: Thread-safe byte accounting

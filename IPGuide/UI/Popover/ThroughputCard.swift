@@ -136,6 +136,7 @@ struct ThroughputCard: View {
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
+            .pointerStyle(.link)
             .disabled(status.isRunning)
         }
     }
