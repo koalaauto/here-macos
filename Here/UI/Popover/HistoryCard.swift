@@ -94,16 +94,18 @@ struct HistoryCard: View {
     }
 
     private var chain: some View {
-        // Distribute chips edge-to-edge: first chip pinned to the leading
-        // edge, last chip pinned to the trailing edge, remaining space
-        // shared evenly around the arrows between them. Flexible `Spacer`s
-        // flanking each arrow do the work — HStack gives each Spacer an
-        // equal slice of the residual width, so the visual gaps match
-        // regardless of how many events exist.
+        // Chain grows from the right: the newest chip is always pinned to
+        // the trailing edge, older chips push to the left as events
+        // accumulate. Inter-chip spacing is fixed — the flexible
+        // `Spacer(minLength: 0)` at the leading edge eats whatever
+        // horizontal slack is left, so 2–3 chips stay clustered tightly
+        // on the right instead of sprawling across the card. A full
+        // chain (`maxChips` entries) naturally consumes most of the
+        // width, so the leading Spacer collapses to near zero.
         //
-        // Newest still lands on the right (Latency-style time axis); older
-        // events beyond `maxChips` get dropped from the visible chain,
-        // with the header's `N changes` counter reflecting the true total.
+        // Older events beyond `maxChips` get dropped from the visible
+        // chain; the header's `N changes` counter still reflects the
+        // true total.
         //
         // Wrapped in a `TimelineView` with a 30 s periodic tick so each
         // chip's "time ago" label stays live — without it, "28m" would
@@ -111,20 +113,13 @@ struct HistoryCard: View {
         let displayed = Array(events.suffix(maxChips))
         return TimelineView(.periodic(from: .now, by: 30)) { context in
             HStack(alignment: .flagMidline, spacing: 0) {
-                // With a single chip the HStack would center it by default,
-                // which breaks the newest-on-right time-axis convention.
-                // Push the lone chip to the trailing edge so the chain
-                // always reads "past → present" with present pinned right.
-                if displayed.count == 1 {
-                    Spacer(minLength: 0)
-                }
+                Spacer(minLength: 0)
                 ForEach(Array(displayed.enumerated()), id: \.element.id) { index, event in
                     if index > 0 {
-                        Spacer(minLength: 4)
                         Image(systemName: "arrow.right")
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
-                        Spacer(minLength: 4)
+                            .padding(.horizontal, 8)
                     }
                     chip(for: event, isCurrent: index == displayed.count - 1, now: context.date)
                 }
