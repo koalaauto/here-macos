@@ -6,6 +6,7 @@ final class AppEnvironment {
     let cache: IPCache
     let networkMonitor: NetworkMonitor
     let sleepWakeObserver: SleepWakeObserver
+    let proxyObserver: ProxyConfigObserver
     let ipService: IPService
     let regionMapper: RegionMapper
     let latencyService: LatencyService
@@ -25,6 +26,7 @@ final class AppEnvironment {
         let settings = SettingsStore()
         let networkMonitor = NetworkMonitor()
         let sleepWakeObserver = SleepWakeObserver()
+        let proxyObserver = ProxyConfigObserver()
         let regionMapper = RegionMapper()
         let ipService = IPService(provider: IPGuideProvider(), cache: cache)
         let latencyService = LatencyService(
@@ -37,7 +39,8 @@ final class AppEnvironment {
             ipService: ipService,
             settings: settings,
             networkMonitor: networkMonitor,
-            sleepWakeObserver: sleepWakeObserver
+            sleepWakeObserver: sleepWakeObserver,
+            proxyObserver: proxyObserver
         )
         let latencyScheduler = LatencyScheduler(
             service: latencyService,
@@ -51,6 +54,7 @@ final class AppEnvironment {
         self.settings = settings
         self.networkMonitor = networkMonitor
         self.sleepWakeObserver = sleepWakeObserver
+        self.proxyObserver = proxyObserver
         self.regionMapper = regionMapper
         self.ipService = ipService
         self.latencyService = latencyService
@@ -65,6 +69,7 @@ final class AppEnvironment {
     func start() {
         networkMonitor.start()
         sleepWakeObserver.start()
+        proxyObserver.start()
         scheduler.start()
         latencyScheduler.start()
         startStateObservation()
@@ -77,6 +82,7 @@ final class AppEnvironment {
         stateObserverTask = nil
         scheduler.stop()
         latencyScheduler.stop()
+        proxyObserver.stop()
         sleepWakeObserver.stop()
         networkMonitor.stop()
     }

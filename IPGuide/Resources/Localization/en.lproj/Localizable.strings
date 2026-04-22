@@ -29,6 +29,8 @@
 "Modules" = "Modules";
 "About" = "About";
 "Launch at login" = "Launch at login";
+"Auto-refresh on network change" = "Auto-refresh on network change";
+"Also refresh when WiFi hops, the system proxy toggles, or the network path otherwise shifts." = "Also refresh when WiFi hops, the system proxy toggles, or the network path otherwise shifts.";
 "What to show" = "What to show";
 "Status bar shows" = "Status bar shows";
 "Country style" = "Country style";

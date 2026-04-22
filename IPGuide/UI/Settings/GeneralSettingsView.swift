@@ -29,6 +29,14 @@ struct GeneralSettingsView: View {
                         Text(interval.label).tag(interval)
                     }
                 }
+                Toggle(
+                    String(localized: "Auto-refresh on network change"),
+                    isOn: $settings.refreshOnNetworkChange
+                )
+            } footer: {
+                Text(String(localized: "Also refresh when WiFi hops, the system proxy toggles, or the network path otherwise shifts."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

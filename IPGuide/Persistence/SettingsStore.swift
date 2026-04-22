@@ -23,6 +23,15 @@ final class SettingsStore {
         didSet { UserDefaults.standard.set(widgetBordered, forKey: Keys.widgetBordered) }
     }
 
+    /// When true, the `RefreshScheduler` triggers an IP refresh on any
+    /// meaningful network event (interface switch, path change, proxy
+    /// config flip) in addition to the periodic timer. Cheap — just
+    /// another `GET /` against ip.guide — and keeps the panel accurate
+    /// after WiFi hops, VPN toggles, Clash mode switches.
+    var refreshOnNetworkChange: Bool {
+        didSet { UserDefaults.standard.set(refreshOnNetworkChange, forKey: Keys.refreshOnNetworkChange) }
+    }
+
     var latencyEnabled: Bool {
         didSet { UserDefaults.standard.set(latencyEnabled, forKey: Keys.latencyEnabled) }
     }
@@ -79,6 +88,7 @@ final class SettingsStore {
         self.refreshIntervalSeconds = validRefreshInterval.rawValue
         self.launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
         self.widgetBordered = defaults.object(forKey: Keys.widgetBordered) as? Bool ?? true
+        self.refreshOnNetworkChange = defaults.object(forKey: Keys.refreshOnNetworkChange) as? Bool ?? true
 
         self.latencyEnabled = defaults.object(forKey: Keys.latencyEnabled) as? Bool ?? true
         self.latencyProbeTarget = (defaults.string(forKey: Keys.latencyProbeTarget)
@@ -151,6 +161,7 @@ final class SettingsStore {
         static let intervalSeconds = "refresh.intervalSeconds"
         static let launchAtLogin = "launchAtLogin"
         static let widgetBordered = "widget.bordered"
+        static let refreshOnNetworkChange = "refresh.onNetworkChange"
         static let latencyEnabled = "latency.enabled"
         static let latencyProbeTarget = "latency.target"
         static let latencyIntervalSeconds = "latency.intervalSeconds"

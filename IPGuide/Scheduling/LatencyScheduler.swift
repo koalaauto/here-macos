@@ -77,7 +77,7 @@ final class LatencyScheduler {
             for await event in stream {
                 guard let self else { return }
                 switch event {
-                case .becameReachable, .interfaceChanged:
+                case .becameReachable, .interfaceChanged, .pathChanged:
                     try? await Task.sleep(for: .seconds(1))
                     await service.probe()
                 case .becameUnreachable:
