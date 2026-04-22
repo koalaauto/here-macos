@@ -111,6 +111,13 @@ struct HistoryCard: View {
         let displayed = Array(events.suffix(maxChips))
         return TimelineView(.periodic(from: .now, by: 30)) { context in
             HStack(alignment: .flagMidline, spacing: 0) {
+                // With a single chip the HStack would center it by default,
+                // which breaks the newest-on-right time-axis convention.
+                // Push the lone chip to the trailing edge so the chain
+                // always reads "past → present" with present pinned right.
+                if displayed.count == 1 {
+                    Spacer(minLength: 0)
+                }
                 ForEach(Array(displayed.enumerated()), id: \.element.id) { index, event in
                     if index > 0 {
                         Spacer(minLength: 4)
