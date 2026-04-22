@@ -14,7 +14,7 @@ enum StatusBarTitleRenderer {
         @MainActor
         var color: NSColor {
             switch self {
-            case .neutral: NSColor.labelColor.withAlphaComponent(0.65)
+            case .neutral: NSColor.labelColor
             case .alert:   NSColor.systemRed.withAlphaComponent(0.9)
             }
         }
