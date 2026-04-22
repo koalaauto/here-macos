@@ -1,0 +1,819 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA0000000000000030000001 /* HereApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000001 /* HereApp.swift */; };
+		AA0000000000000030000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000002 /* AppDelegate.swift */; };
+		AA0000000000000030000003 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000003 /* AppEnvironment.swift */; };
+		AA0000000000000030000004 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000004 /* StatusBarController.swift */; };
+		AA0000000000000030000005 /* StatusBarTitleRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000005 /* StatusBarTitleRenderer.swift */; };
+		AA0000000000000030000006 /* PopoverHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000006 /* PopoverHost.swift */; };
+		AA0000000000000030000007 /* IPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000007 /* IPService.swift */; };
+		AA0000000000000030000008 /* IPProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000008 /* IPProvider.swift */; };
+		AA0000000000000030000009 /* IPServiceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000009 /* IPServiceError.swift */; };
+		AA000000000000003000000A /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000000A /* NetworkMonitor.swift */; };
+		AA000000000000003000000B /* IPDataModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000000B /* IPDataModel.swift */; };
+		AA000000000000003000000C /* IPState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000000C /* IPState.swift */; };
+		AA000000000000003000000D /* DisplayStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000000D /* DisplayStyle.swift */; };
+		AA000000000000003000000E /* RefreshInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000000E /* RefreshInterval.swift */; };
+		AA000000000000003000000F /* RefreshScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000000F /* RefreshScheduler.swift */; };
+		AA0000000000000030000010 /* SleepWakeObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000010 /* SleepWakeObserver.swift */; };
+		AA0000000000000030000011 /* IPCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000011 /* IPCache.swift */; };
+		AA0000000000000030000012 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000012 /* SettingsStore.swift */; };
+		AA0000000000000030000013 /* LaunchAtLoginService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000013 /* LaunchAtLoginService.swift */; };
+		AA0000000000000030000014 /* RegionMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000014 /* RegionMapper.swift */; };
+		AA0000000000000030000015 /* CountryFlag.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000015 /* CountryFlag.swift */; };
+		AA0000000000000030000016 /* Clipboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000016 /* Clipboard.swift */; };
+		AA0000000000000030000017 /* PopoverRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000017 /* PopoverRootView.swift */; };
+		AA0000000000000030000018 /* IPHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000018 /* IPHeroView.swift */; };
+		AA0000000000000030000019 /* LocationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000019 /* LocationCard.swift */; };
+		AA000000000000003000001B /* MetaFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000001B /* MetaFooter.swift */; };
+		AA000000000000003000001C /* RefreshButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000001C /* RefreshButton.swift */; };
+		AA000000000000003000001D /* CopyableRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000001D /* CopyableRow.swift */; };
+		AA000000000000003000001E /* SettingsScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000001E /* SettingsScene.swift */; };
+		AA000000000000003000001F /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000001F /* GeneralSettingsView.swift */; };
+		AA0000000000000030000020 /* AppearanceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000020 /* AppearanceSettingsView.swift */; };
+		AA0000000000000030000021 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000021 /* AboutView.swift */; };
+		AA0000000000000030000022 /* CardContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000022 /* CardContainer.swift */; };
+		AA0000000000000030000023 /* StaleBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000023 /* StaleBadge.swift */; };
+		AA0000000000000030000024 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000024 /* Log.swift */; };
+		AA0000000000000030000025 /* FlagRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000025 /* FlagRenderer.swift */; };
+		AA0000000000000030000026 /* LatencySample.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000026 /* LatencySample.swift */; };
+		AA0000000000000030000027 /* PopoverModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000027 /* PopoverModule.swift */; };
+		AA0000000000000030000028 /* LatencyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000028 /* LatencyService.swift */; };
+		AA0000000000000030000029 /* LatencyScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000029 /* LatencyScheduler.swift */; };
+		AA000000000000003000002A /* LatencyCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000002A /* LatencyCard.swift */; };
+		AA000000000000003000002B /* ModulesSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000002B /* ModulesSettingsView.swift */; };
+		AA0000000000000030000048 /* IPChangeEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000048 /* IPChangeEvent.swift */; };
+		AA000000000000003000004A /* ThroughputResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000004A /* ThroughputResult.swift */; };
+		AA000000000000003000004B /* IPHistoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000004B /* IPHistoryService.swift */; };
+		AA000000000000003000004D /* ThroughputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000004D /* ThroughputService.swift */; };
+		AA000000000000003000004E /* HistoryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000004E /* HistoryCard.swift */; };
+		AA000000000000003000004F /* ThroughputCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000002000004F /* ThroughputCard.swift */; };
+		AA0000000000000030000052 /* CountryNameMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000052 /* CountryNameMapper.swift */; };
+		AA0000000000000030000053 /* ThroughputEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000053 /* ThroughputEndpoint.swift */; };
+		AA0000000000000030000054 /* SystemNetworkObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000054 /* SystemNetworkObserver.swift */; };
+		AA0000000000000030000055 /* BundledFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000055 /* BundledFlags.swift */; };
+		AA0000000000000030000032 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000032 /* Assets.xcassets */; };
+		AA0000000000000030000033 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = AA000000000000001000010D /* Localizable.strings */; };
+		AA0000000000000030000040 /* URLProtocolMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000040 /* URLProtocolMock.swift */; };
+		AA0000000000000030000041 /* IPServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000041 /* IPServiceTests.swift */; };
+		AA0000000000000030000042 /* IPDataModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000042 /* IPDataModelTests.swift */; };
+		AA0000000000000030000043 /* RegionMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000043 /* RegionMapperTests.swift */; };
+		AA0000000000000030000044 /* CountryFlagTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000044 /* CountryFlagTests.swift */; };
+		AA0000000000000030000045 /* StatusBarTitleRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000045 /* StatusBarTitleRendererTests.swift */; };
+		AA0000000000000030000046 /* IPCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000046 /* IPCacheTests.swift */; };
+		AA0000000000000030000047 /* sample_response.json in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000047 /* sample_response.json */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AA0000000000000020000001 /* HereApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HereApp.swift; sourceTree = "<group>"; };
+		AA0000000000000020000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		AA0000000000000020000003 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		AA0000000000000020000004 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
+		AA0000000000000020000005 /* StatusBarTitleRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarTitleRenderer.swift; sourceTree = "<group>"; };
+		AA0000000000000020000006 /* PopoverHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverHost.swift; sourceTree = "<group>"; };
+		AA0000000000000020000007 /* IPService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPService.swift; sourceTree = "<group>"; };
+		AA0000000000000020000008 /* IPProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPProvider.swift; sourceTree = "<group>"; };
+		AA0000000000000020000009 /* IPServiceError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPServiceError.swift; sourceTree = "<group>"; };
+		AA000000000000002000000A /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		AA000000000000002000000B /* IPDataModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPDataModel.swift; sourceTree = "<group>"; };
+		AA000000000000002000000C /* IPState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPState.swift; sourceTree = "<group>"; };
+		AA000000000000002000000D /* DisplayStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayStyle.swift; sourceTree = "<group>"; };
+		AA000000000000002000000E /* RefreshInterval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshInterval.swift; sourceTree = "<group>"; };
+		AA000000000000002000000F /* RefreshScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshScheduler.swift; sourceTree = "<group>"; };
+		AA0000000000000020000010 /* SleepWakeObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepWakeObserver.swift; sourceTree = "<group>"; };
+		AA0000000000000020000011 /* IPCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPCache.swift; sourceTree = "<group>"; };
+		AA0000000000000020000012 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		AA0000000000000020000013 /* LaunchAtLoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginService.swift; sourceTree = "<group>"; };
+		AA0000000000000020000014 /* RegionMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionMapper.swift; sourceTree = "<group>"; };
+		AA0000000000000020000015 /* CountryFlag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryFlag.swift; sourceTree = "<group>"; };
+		AA0000000000000020000016 /* Clipboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clipboard.swift; sourceTree = "<group>"; };
+		AA0000000000000020000017 /* PopoverRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverRootView.swift; sourceTree = "<group>"; };
+		AA0000000000000020000018 /* IPHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPHeroView.swift; sourceTree = "<group>"; };
+		AA0000000000000020000019 /* LocationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationCard.swift; sourceTree = "<group>"; };
+		AA000000000000002000001B /* MetaFooter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaFooter.swift; sourceTree = "<group>"; };
+		AA000000000000002000001C /* RefreshButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshButton.swift; sourceTree = "<group>"; };
+		AA000000000000002000001D /* CopyableRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyableRow.swift; sourceTree = "<group>"; };
+		AA000000000000002000001E /* SettingsScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScene.swift; sourceTree = "<group>"; };
+		AA000000000000002000001F /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
+		AA0000000000000020000020 /* AppearanceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettingsView.swift; sourceTree = "<group>"; };
+		AA0000000000000020000021 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
+		AA0000000000000020000022 /* CardContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardContainer.swift; sourceTree = "<group>"; };
+		AA0000000000000020000023 /* StaleBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaleBadge.swift; sourceTree = "<group>"; };
+		AA0000000000000020000024 /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
+		AA0000000000000020000025 /* FlagRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlagRenderer.swift; sourceTree = "<group>"; };
+		AA0000000000000020000026 /* LatencySample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatencySample.swift; sourceTree = "<group>"; };
+		AA0000000000000020000027 /* PopoverModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverModule.swift; sourceTree = "<group>"; };
+		AA0000000000000020000028 /* LatencyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatencyService.swift; sourceTree = "<group>"; };
+		AA0000000000000020000029 /* LatencyScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatencyScheduler.swift; sourceTree = "<group>"; };
+		AA000000000000002000002A /* LatencyCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatencyCard.swift; sourceTree = "<group>"; };
+		AA000000000000002000002B /* ModulesSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModulesSettingsView.swift; sourceTree = "<group>"; };
+		AA0000000000000020000048 /* IPChangeEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPChangeEvent.swift; sourceTree = "<group>"; };
+		AA000000000000002000004A /* ThroughputResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThroughputResult.swift; sourceTree = "<group>"; };
+		AA000000000000002000004B /* IPHistoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPHistoryService.swift; sourceTree = "<group>"; };
+		AA000000000000002000004D /* ThroughputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThroughputService.swift; sourceTree = "<group>"; };
+		AA000000000000002000004E /* HistoryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryCard.swift; sourceTree = "<group>"; };
+		AA000000000000002000004F /* ThroughputCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThroughputCard.swift; sourceTree = "<group>"; };
+		AA0000000000000020000052 /* CountryNameMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryNameMapper.swift; sourceTree = "<group>"; };
+		AA0000000000000020000053 /* ThroughputEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThroughputEndpoint.swift; sourceTree = "<group>"; };
+		AA0000000000000020000054 /* SystemNetworkObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemNetworkObserver.swift; sourceTree = "<group>"; };
+		AA0000000000000020000055 /* BundledFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledFlags.swift; sourceTree = "<group>"; };
+		AA0000000000000020000030 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA0000000000000020000031 /* Here.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Here.entitlements; sourceTree = "<group>"; };
+		AA0000000000000020000032 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AA0000000000000020000033 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		AA0000000000000020000040 /* URLProtocolMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLProtocolMock.swift; sourceTree = "<group>"; };
+		AA0000000000000020000041 /* IPServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPServiceTests.swift; sourceTree = "<group>"; };
+		AA0000000000000020000042 /* IPDataModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPDataModelTests.swift; sourceTree = "<group>"; };
+		AA0000000000000020000043 /* RegionMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionMapperTests.swift; sourceTree = "<group>"; };
+		AA0000000000000020000044 /* CountryFlagTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountryFlagTests.swift; sourceTree = "<group>"; };
+		AA0000000000000020000045 /* StatusBarTitleRendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarTitleRendererTests.swift; sourceTree = "<group>"; };
+		AA0000000000000020000046 /* IPCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPCacheTests.swift; sourceTree = "<group>"; };
+		AA0000000000000020000047 /* sample_response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = sample_response.json; sourceTree = "<group>"; };
+		AA0000000000000020000050 /* Here.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Here.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA0000000000000020000051 /* HereTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HereTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AA0000000000000040000003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA0000000000000040000013 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AA0000000000000010000001 /* */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000010000100 /* Here */,
+				AA0000000000000010000200 /* HereTests */,
+				AA0000000000000010000002 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AA0000000000000010000002 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000020000050 /* Here.app */,
+				AA0000000000000020000051 /* HereTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AA0000000000000010000100 /* Here */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000010000101 /* App */,
+				AA0000000000000010000102 /* StatusBar */,
+				AA0000000000000010000103 /* Networking */,
+				AA0000000000000010000104 /* Models */,
+				AA0000000000000010000105 /* Scheduling */,
+				AA0000000000000010000106 /* Persistence */,
+				AA0000000000000010000107 /* Services */,
+				AA0000000000000010000108 /* UI */,
+				AA000000000000001000010C /* Logging */,
+				AA000000000000001000010E /* Resources */,
+				AA0000000000000020000031 /* Here.entitlements */,
+			);
+			path = Here;
+			sourceTree = "<group>";
+		};
+		AA0000000000000010000101 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000020000001 /* HereApp.swift */,
+				AA0000000000000020000002 /* AppDelegate.swift */,
+				AA0000000000000020000003 /* AppEnvironment.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		AA0000000000000010000102 /* StatusBar */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000020000004 /* StatusBarController.swift */,
+				AA0000000000000020000005 /* StatusBarTitleRenderer.swift */,
+				AA0000000000000020000006 /* PopoverHost.swift */,
+			);
+			path = StatusBar;
+			sourceTree = "<group>";
+		};
+		AA0000000000000010000103 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000020000007 /* IPService.swift */,
+				AA0000000000000020000008 /* IPProvider.swift */,
+				AA0000000000000020000009 /* IPServiceError.swift */,
+				AA000000000000002000000A /* NetworkMonitor.swift */,
+				AA0000000000000020000054 /* SystemNetworkObserver.swift */,
+				AA0000000000000020000028 /* LatencyService.swift */,
+				AA000000000000002000004B /* IPHistoryService.swift */,
+				AA000000000000002000004D /* ThroughputService.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		AA0000000000000010000104 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000002000000B /* IPDataModel.swift */,
+				AA000000000000002000000C /* IPState.swift */,
+				AA000000000000002000000D /* DisplayStyle.swift */,
+				AA000000000000002000000E /* RefreshInterval.swift */,
+				AA0000000000000020000026 /* LatencySample.swift */,
+				AA0000000000000020000027 /* PopoverModule.swift */,
+				AA0000000000000020000048 /* IPChangeEvent.swift */,
+				AA000000000000002000004A /* ThroughputResult.swift */,
+				AA0000000000000020000053 /* ThroughputEndpoint.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		AA0000000000000010000105 /* Scheduling */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000002000000F /* RefreshScheduler.swift */,
+				AA0000000000000020000010 /* SleepWakeObserver.swift */,
+				AA0000000000000020000029 /* LatencyScheduler.swift */,
+			);
+			path = Scheduling;
+			sourceTree = "<group>";
+		};
+		AA0000000000000010000106 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000020000011 /* IPCache.swift */,
+				AA0000000000000020000012 /* SettingsStore.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		AA0000000000000010000107 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000020000013 /* LaunchAtLoginService.swift */,
+				AA0000000000000020000014 /* RegionMapper.swift */,
+				AA0000000000000020000015 /* CountryFlag.swift */,
+				AA0000000000000020000052 /* CountryNameMapper.swift */,
+				AA0000000000000020000025 /* FlagRenderer.swift */,
+				AA0000000000000020000055 /* BundledFlags.swift */,
+				AA0000000000000020000016 /* Clipboard.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		AA0000000000000010000108 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000010000109 /* Popover */,
+				AA000000000000001000010A /* Settings */,
+				AA000000000000001000010B /* Shared */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		AA0000000000000010000109 /* Popover */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000020000017 /* PopoverRootView.swift */,
+				AA0000000000000020000018 /* IPHeroView.swift */,
+				AA0000000000000020000019 /* LocationCard.swift */,
+				AA000000000000002000002A /* LatencyCard.swift */,
+				AA000000000000002000004E /* HistoryCard.swift */,
+				AA000000000000002000004F /* ThroughputCard.swift */,
+				AA000000000000002000001B /* MetaFooter.swift */,
+				AA000000000000002000001C /* RefreshButton.swift */,
+				AA000000000000002000001D /* CopyableRow.swift */,
+			);
+			path = Popover;
+			sourceTree = "<group>";
+		};
+		AA000000000000001000010A /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000002000001E /* SettingsScene.swift */,
+				AA000000000000002000001F /* GeneralSettingsView.swift */,
+				AA0000000000000020000020 /* AppearanceSettingsView.swift */,
+				AA000000000000002000002B /* ModulesSettingsView.swift */,
+				AA0000000000000020000021 /* AboutView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		AA000000000000001000010B /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000020000022 /* CardContainer.swift */,
+				AA0000000000000020000023 /* StaleBadge.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		AA000000000000001000010C /* Logging */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000020000024 /* Log.swift */,
+			);
+			path = Logging;
+			sourceTree = "<group>";
+		};
+		AA000000000000001000010D /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				AA0000000000000020000033 /* en */,
+			);
+			name = Localizable.strings;
+			path = Localization;
+			sourceTree = "<group>";
+		};
+		AA000000000000001000010E /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000020000030 /* Info.plist */,
+				AA0000000000000020000032 /* Assets.xcassets */,
+				AA000000000000001000010D /* Localizable.strings */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		AA0000000000000010000200 /* HereTests */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000010000201 /* Support */,
+				AA0000000000000010000202 /* Fixtures */,
+				AA0000000000000020000041 /* IPServiceTests.swift */,
+				AA0000000000000020000042 /* IPDataModelTests.swift */,
+				AA0000000000000020000043 /* RegionMapperTests.swift */,
+				AA0000000000000020000044 /* CountryFlagTests.swift */,
+				AA0000000000000020000045 /* StatusBarTitleRendererTests.swift */,
+				AA0000000000000020000046 /* IPCacheTests.swift */,
+			);
+			path = HereTests;
+			sourceTree = "<group>";
+		};
+		AA0000000000000010000201 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000020000040 /* URLProtocolMock.swift */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		AA0000000000000010000202 /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000020000047 /* sample_response.json */,
+			);
+			path = Fixtures;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA0000000000000050000001 /* Here */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA0000000000000070000001 /* Build configuration list for PBXNativeTarget "Here" */;
+			buildPhases = (
+				AA0000000000000040000001 /* Sources */,
+				AA0000000000000040000002 /* Resources */,
+				AA0000000000000040000003 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Here;
+			productName = Here;
+			productReference = AA0000000000000020000050 /* Here.app */;
+			productType = "com.apple.product-type.application";
+		};
+		AA0000000000000050000002 /* HereTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA0000000000000070000002 /* Build configuration list for PBXNativeTarget "HereTests" */;
+			buildPhases = (
+				AA0000000000000040000011 /* Sources */,
+				AA0000000000000040000012 /* Resources */,
+				AA0000000000000040000013 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AA0000000000000050000003 /* PBXTargetDependency */,
+			);
+			name = HereTests;
+			productName = HereTests;
+			productReference = AA0000000000000020000051 /* HereTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AA0000000000000080000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					AA0000000000000050000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					AA0000000000000050000002 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = AA0000000000000050000001;
+					};
+				};
+			};
+			buildConfigurationList = AA0000000000000070000003 /* Build configuration list for PBXProject "Here" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AA0000000000000010000001;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = AA0000000000000010000002 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA0000000000000050000001 /* Here */,
+				AA0000000000000050000002 /* HereTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AA0000000000000040000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000000000000030000032 /* Assets.xcassets in Resources */,
+				AA0000000000000030000033 /* Localizable.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA0000000000000040000012 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000000000000030000047 /* sample_response.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AA0000000000000040000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000000000000030000001 /* HereApp.swift in Sources */,
+				AA0000000000000030000002 /* AppDelegate.swift in Sources */,
+				AA0000000000000030000003 /* AppEnvironment.swift in Sources */,
+				AA0000000000000030000004 /* StatusBarController.swift in Sources */,
+				AA0000000000000030000005 /* StatusBarTitleRenderer.swift in Sources */,
+				AA0000000000000030000006 /* PopoverHost.swift in Sources */,
+				AA0000000000000030000007 /* IPService.swift in Sources */,
+				AA0000000000000030000008 /* IPProvider.swift in Sources */,
+				AA0000000000000030000009 /* IPServiceError.swift in Sources */,
+				AA000000000000003000000A /* NetworkMonitor.swift in Sources */,
+				AA000000000000003000000B /* IPDataModel.swift in Sources */,
+				AA000000000000003000000C /* IPState.swift in Sources */,
+				AA000000000000003000000D /* DisplayStyle.swift in Sources */,
+				AA000000000000003000000E /* RefreshInterval.swift in Sources */,
+				AA000000000000003000000F /* RefreshScheduler.swift in Sources */,
+				AA0000000000000030000010 /* SleepWakeObserver.swift in Sources */,
+				AA0000000000000030000011 /* IPCache.swift in Sources */,
+				AA0000000000000030000012 /* SettingsStore.swift in Sources */,
+				AA0000000000000030000013 /* LaunchAtLoginService.swift in Sources */,
+				AA0000000000000030000014 /* RegionMapper.swift in Sources */,
+				AA0000000000000030000015 /* CountryFlag.swift in Sources */,
+				AA0000000000000030000016 /* Clipboard.swift in Sources */,
+				AA0000000000000030000017 /* PopoverRootView.swift in Sources */,
+				AA0000000000000030000018 /* IPHeroView.swift in Sources */,
+				AA0000000000000030000019 /* LocationCard.swift in Sources */,
+				AA000000000000003000001B /* MetaFooter.swift in Sources */,
+				AA000000000000003000001C /* RefreshButton.swift in Sources */,
+				AA000000000000003000001D /* CopyableRow.swift in Sources */,
+				AA000000000000003000001E /* SettingsScene.swift in Sources */,
+				AA000000000000003000001F /* GeneralSettingsView.swift in Sources */,
+				AA0000000000000030000020 /* AppearanceSettingsView.swift in Sources */,
+				AA0000000000000030000021 /* AboutView.swift in Sources */,
+				AA0000000000000030000022 /* CardContainer.swift in Sources */,
+				AA0000000000000030000023 /* StaleBadge.swift in Sources */,
+				AA0000000000000030000024 /* Log.swift in Sources */,
+				AA0000000000000030000025 /* FlagRenderer.swift in Sources */,
+				AA0000000000000030000026 /* LatencySample.swift in Sources */,
+				AA0000000000000030000027 /* PopoverModule.swift in Sources */,
+				AA0000000000000030000028 /* LatencyService.swift in Sources */,
+				AA0000000000000030000029 /* LatencyScheduler.swift in Sources */,
+				AA000000000000003000002A /* LatencyCard.swift in Sources */,
+				AA000000000000003000002B /* ModulesSettingsView.swift in Sources */,
+				AA0000000000000030000048 /* IPChangeEvent.swift in Sources */,
+				AA000000000000003000004A /* ThroughputResult.swift in Sources */,
+				AA000000000000003000004B /* IPHistoryService.swift in Sources */,
+				AA000000000000003000004D /* ThroughputService.swift in Sources */,
+				AA000000000000003000004E /* HistoryCard.swift in Sources */,
+				AA000000000000003000004F /* ThroughputCard.swift in Sources */,
+				AA0000000000000030000052 /* CountryNameMapper.swift in Sources */,
+				AA0000000000000030000053 /* ThroughputEndpoint.swift in Sources */,
+				AA0000000000000030000054 /* SystemNetworkObserver.swift in Sources */,
+				AA0000000000000030000055 /* BundledFlags.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA0000000000000040000011 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000000000000030000040 /* URLProtocolMock.swift in Sources */,
+				AA0000000000000030000041 /* IPServiceTests.swift in Sources */,
+				AA0000000000000030000042 /* IPDataModelTests.swift in Sources */,
+				AA0000000000000030000043 /* RegionMapperTests.swift in Sources */,
+				AA0000000000000030000044 /* CountryFlagTests.swift in Sources */,
+				AA0000000000000030000045 /* StatusBarTitleRendererTests.swift in Sources */,
+				AA0000000000000030000046 /* IPCacheTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AA0000000000000050000003 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA0000000000000050000001 /* Here */;
+			targetProxy = AA0000000000000050000004 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXContainerItemProxy section */
+		AA0000000000000050000004 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA0000000000000080000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA0000000000000050000001;
+			remoteInfo = Here;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin XCBuildConfiguration section */
+		AA0000000000000060000021 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		AA0000000000000060000022 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		AA0000000000000060000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Here/Here.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Here/Resources/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.here-macos;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		AA0000000000000060000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Here/Here.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Here/Resources/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.here-macos;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		AA0000000000000060000011 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.here-macos.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Here.app/Contents/MacOS/Here";
+			};
+			name = Debug;
+		};
+		AA0000000000000060000012 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.here-macos.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Here.app/Contents/MacOS/Here";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AA0000000000000070000001 /* Build configuration list for PBXNativeTarget "Here" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000000000000060000001 /* Debug */,
+				AA0000000000000060000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA0000000000000070000002 /* Build configuration list for PBXNativeTarget "HereTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000000000000060000011 /* Debug */,
+				AA0000000000000060000012 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA0000000000000070000003 /* Build configuration list for PBXProject "Here" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000000000000060000021 /* Debug */,
+				AA0000000000000060000022 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AA0000000000000080000001 /* Project object */;
+}

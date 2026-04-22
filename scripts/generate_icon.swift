@@ -7,7 +7,7 @@
 
 import AppKit
 
-let outputDir = "IPGuide/Resources/Assets.xcassets/AppIcon.appiconset"
+let outputDir = "Here/Resources/Assets.xcassets/AppIcon.appiconset"
 
 func renderIcon(size: CGFloat) -> NSImage {
     let image = NSImage(size: NSSize(width: size, height: size))

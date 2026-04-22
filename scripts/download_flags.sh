@@ -10,7 +10,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-FLAGS_DIR="IPGuide/Resources/Assets.xcassets/Flags"
+FLAGS_DIR="Here/Resources/Assets.xcassets/Flags"
 # Width of 1× image. Retina displays will upscale; 160px wide keeps file <~1.5KB
 # while still looking sharp at 15-22pt status bar heights.
 WIDTH="w160"
