@@ -55,8 +55,14 @@ struct PopoverRootView: View {
             loadedStack(model: model)
         case .error(let error, let cached, _):
             if let cached {
-                loadedStack(model: cached)
-                    .overlay(offlineBanner(error), alignment: .top)
+                // Banner on its own row above the stack rather than an
+                // overlay — the overlay version sat on top of the hero
+                // header and collided with the country name (truncated
+                // "Unite…" under the pill, misaligned icon).
+                VStack(alignment: .leading, spacing: 10) {
+                    offlineBanner(error)
+                    loadedStack(model: cached)
+                }
             } else {
                 errorView(error)
             }
@@ -107,11 +113,13 @@ struct PopoverRootView: View {
             Text(error.userDescription)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(2)
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(.thinMaterial, in: Capsule())
-        .padding(.top, 2)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     @ViewBuilder

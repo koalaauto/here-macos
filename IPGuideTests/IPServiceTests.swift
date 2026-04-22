@@ -79,19 +79,19 @@ struct IPServiceTests {
         }
     }
 
-    @Test func transientFailureRetriesAndSucceeds() async throws {
-        let model = try sampleModel()
-        let provider = StubProvider(pages: [
-            .failure(.transport(message: "flap")),
-            .failure(.http(statusCode: 503)),
-            .success(model)
-        ])
+    @Test func transientFailureDoesNotRetry() async throws {
+        // No retry: a single transient failure lands straight in .error.
+        // Caller (scheduler) is responsible for retriggering on its own
+        // cadence.
+        let provider = StubProvider(pages: [.failure(.transport(message: "flap"))])
         let service = IPService(provider: provider, cache: ephemeralCache())
         let state = await service.refresh(force: true)
-        if case .loaded = state { } else {
-            Issue.record("Expected success after retries, got \(state)")
+        if case .error(let err, _, _) = state {
+            #expect(err == .transport(message: "flap"))
+        } else {
+            Issue.record("Expected .error after single attempt, got \(state)")
         }
-        #expect(provider.attemptCount == 3)
+        #expect(provider.attemptCount == 1)
     }
 
     @Test func permanent4xxDoesNotRetry() async {

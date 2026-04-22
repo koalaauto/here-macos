@@ -6,13 +6,40 @@ enum FlagRenderer {
     /// Render a country flag to an NSImage.
     ///
     /// Prefers a bundled Twemoji PNG (real square flag) and falls back to the
-    /// system's Apple Color Emoji if the asset is missing. Mono variants are
+    /// system's Apple Color Emoji if the asset is missing. When the ISO code
+    /// is empty/unknown (we're in `.idle / .loading / .error` and don't have
+    /// a verified egress yet), returns a small neutral placeholder rectangle
+    /// so the menu-bar pill can keep its "flag + code" shape instead of
+    /// falling back to a wildly-different SF symbol. Mono variants are
     /// produced by desaturating the source image.
     static func image(alpha2: String, pointSize: CGFloat = 15, mono: Bool) -> NSImage? {
-        let source = bundledFlag(alpha2: alpha2) ?? renderEmoji(alpha2: alpha2, pointSize: pointSize)
-        guard let source else { return nil }
-        let resized = resize(source, to: pointSize)
-        return mono ? desaturated(resized) : resized
+        if !alpha2.isEmpty,
+           let source = bundledFlag(alpha2: alpha2) ?? renderEmoji(alpha2: alpha2, pointSize: pointSize) {
+            let resized = resize(source, to: pointSize)
+            return mono ? desaturated(resized) : resized
+        }
+        return placeholderFlag(pointSize: pointSize)
+    }
+
+    /// Draw a small rounded rectangle in the label color (semi-transparent)
+    /// as a stand-in when we don't have a real flag to show. 3:2 aspect
+    /// matches the rest of the bundled flag assets so surrounding layout
+    /// doesn't jump.
+    private static func placeholderFlag(pointSize: CGFloat) -> NSImage? {
+        let height = pointSize
+        let width = ceil(height * 1.5)
+        let size = NSSize(width: width, height: height)
+        let image = NSImage(size: size)
+        image.lockFocusFlipped(false)
+        let rect = NSRect(origin: .zero, size: size).insetBy(dx: 0.5, dy: 0.5)
+        let path = NSBezierPath(roundedRect: rect, xRadius: 1.5, yRadius: 1.5)
+        NSColor.labelColor.withAlphaComponent(0.18).setFill()
+        path.fill()
+        NSColor.labelColor.withAlphaComponent(0.35).setStroke()
+        path.lineWidth = 0.5
+        path.stroke()
+        image.unlockFocus()
+        return image
     }
 
     private static func bundledFlag(alpha2: String) -> NSImage? {

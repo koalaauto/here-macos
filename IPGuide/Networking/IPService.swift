@@ -54,8 +54,13 @@ actor IPService {
 
         emit(.loading(cached: currentState.model))
 
+        // Single attempt. Previously this retried up to 3× with exponential
+        // backoff, which made a failure sequence hammer an unreachable host
+        // for ~45 s — noisy when the user is on a China egress that can't
+        // see ip.guide. If the first try fails, we just drop into `.error`
+        // and wait for the next scheduler/network-event trigger.
         let task = Task<IPDataModel, Error> { [provider] in
-            try await Self.fetchWithRetry(using: provider)
+            try await provider.fetch()
         }
         inflight = task
 
@@ -80,36 +85,6 @@ actor IPService {
         currentState = state
         for continuation in continuations.values {
             continuation.yield(state)
-        }
-    }
-
-    private static func fetchWithRetry(using provider: IPProvider, maxAttempts: Int = 3) async throws -> IPDataModel {
-        var attempt = 0
-        var lastError: Error = IPServiceError.transport(message: "no attempts made")
-        while attempt < maxAttempts {
-            attempt += 1
-            do {
-                return try await provider.fetch()
-            } catch let error as IPServiceError {
-                lastError = error
-                if !shouldRetry(error) || attempt == maxAttempts { throw error }
-            } catch {
-                lastError = error
-                let mapped = IPServiceError.from(error)
-                if !shouldRetry(mapped) || attempt == maxAttempts { throw mapped }
-            }
-            let base = pow(2.0, Double(attempt - 1))
-            let jitter = Double.random(in: 0.75...1.25)
-            try await Task.sleep(for: .seconds(base * jitter))
-        }
-        throw lastError
-    }
-
-    private static func shouldRetry(_ error: IPServiceError) -> Bool {
-        switch error {
-        case .timeout, .transport, .offline: true
-        case .http(let code): (500..<600).contains(code)
-        case .decoding, .cancelled: false
         }
     }
 }
