@@ -25,11 +25,6 @@ struct AppearanceSettingsView: View {
                 .pickerStyle(.radioGroup)
                 .disabled(settings.showMode == .regionOnly)
             }
-
-            Section(String(localized: "Widget frame")) {
-                Toggle(String(localized: "Draw rounded border"), isOn: $settings.widgetBordered)
-                    .help(String(localized: "Wrap the menu bar item in a subtle rounded border."))
-            }
         }
         .formStyle(.grouped)
     }

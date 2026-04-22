@@ -19,10 +19,6 @@ final class SettingsStore {
         didSet { UserDefaults.standard.set(launchAtLogin, forKey: Keys.launchAtLogin) }
     }
 
-    var widgetBordered: Bool {
-        didSet { UserDefaults.standard.set(widgetBordered, forKey: Keys.widgetBordered) }
-    }
-
     /// When true, the `RefreshScheduler` triggers an IP refresh on any
     /// meaningful network event (interface switch, path change, proxy
     /// config flip) in addition to the periodic timer. Cheap — just
@@ -87,7 +83,6 @@ final class SettingsStore {
         let validRefreshInterval = RefreshInterval(rawValue: stored) ?? .m5
         self.refreshIntervalSeconds = validRefreshInterval.rawValue
         self.launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
-        self.widgetBordered = defaults.object(forKey: Keys.widgetBordered) as? Bool ?? true
         self.refreshOnNetworkChange = defaults.object(forKey: Keys.refreshOnNetworkChange) as? Bool ?? true
 
         self.latencyEnabled = defaults.object(forKey: Keys.latencyEnabled) as? Bool ?? true
@@ -160,7 +155,6 @@ final class SettingsStore {
         static let countryStyle = "displayStyle.country"
         static let intervalSeconds = "refresh.intervalSeconds"
         static let launchAtLogin = "launchAtLogin"
-        static let widgetBordered = "widget.bordered"
         static let refreshOnNetworkChange = "refresh.onNetworkChange"
         static let latencyEnabled = "latency.enabled"
         static let latencyProbeTarget = "latency.target"

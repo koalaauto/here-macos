@@ -11,6 +11,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     private let statusItem: NSStatusItem
     private let popoverHost: PopoverHost
     private var stateTask: Task<Void, Never>?
+    private var latencyTask: Task<Void, Never>?
     private var settingsTask: Task<Void, Never>?
     private var globalMouseMonitor: Any?
     private var resignObserver: NSObjectProtocol?
@@ -18,6 +19,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     private var closeRequestObserver: NSObjectProtocol?
     private var latestState: IPState = .idle
     private var latestRegion: String?
+    private var latestLatencyBucket: LatencyBucket = .empty
     private var popoverOpen = false
     /// Alpha-2 code currently used for the "unknown egress" placeholder.
     /// Picked once when we enter an unknown state, held stable through
@@ -44,6 +46,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         configureButton()
         render()
         observeState()
+        observeLatency()
         observeSettings()
         observeAppearance()
         observeCloseRequests()
@@ -200,6 +203,22 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         }
     }
 
+    private func observeLatency() {
+        latencyTask?.cancel()
+        latencyTask = Task { [weak self, environment] in
+            for await samples in environment.latencyService.stream() {
+                guard let self else { return }
+                let bucket = LatencyBucket.classify(samples.last, thresholds: .default)
+                await MainActor.run {
+                    if self.latestLatencyBucket != bucket {
+                        self.latestLatencyBucket = bucket
+                        self.render()
+                    }
+                }
+            }
+        }
+    }
+
     private func observeSettings() {
         settingsTask?.cancel()
         settingsTask = Task { [weak self] in
@@ -229,15 +248,30 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     private struct SettingsSnapshot: Equatable {
         let show: ShowMode
         let style: CountryStyle
-        let bordered: Bool
+        let latencyEnabled: Bool
     }
 
     private func settingsSnapshot() -> SettingsSnapshot {
         SettingsSnapshot(
             show: environment.settings.showMode,
             style: environment.settings.countryStyle,
-            bordered: environment.settings.widgetBordered
+            latencyEnabled: environment.settings.latencyEnabled
         )
+    }
+
+    /// Map the current latency bucket to the pill border tint.
+    /// `.neutral` whenever the latency module is disabled or the probe
+    /// hasn't produced a sample yet — we don't want to assert a tier
+    /// we can't currently verify.
+    private func currentBorderTint() -> StatusBarTitleRenderer.BorderTint {
+        guard environment.settings.latencyEnabled else { return .neutral }
+        switch latestLatencyBucket {
+        case .empty:    return .neutral
+        case .good:     return .good
+        case .moderate: return .moderate
+        case .slow:     return .slow
+        case .poor:     return .poor
+        }
     }
 
     // MARK: - Rendering
@@ -266,7 +300,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             regionCode: latestRegion,
             showMode: settings.showMode,
             countryStyle: settings.countryStyle,
-            bordered: settings.widgetBordered,
+            borderTint: currentBorderTint(),
             flagMono: !popoverOpen
         )
 
@@ -295,8 +329,6 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     /// makes state transitions visible — a collision with the previous
     /// country would otherwise look like nothing changed.
     private func renderUnknown(on button: NSStatusBarButton) {
-        let settings = environment.settings
-
         let code: String
         if let stored = currentUnknownFlag {
             code = stored
@@ -311,7 +343,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             regionCode: "OO",
             showMode: .both,
             countryStyle: .flag,
-            bordered: settings.widgetBordered,
+            borderTint: currentBorderTint(),
             flagMono: !popoverOpen
         )
         if let image = StatusBarTitleRenderer.renderImage(input) {

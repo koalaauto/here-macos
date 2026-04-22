@@ -16,7 +16,7 @@ struct StatusBarTitleRendererTests {
             regionCode: regionCode,
             showMode: showMode,
             countryStyle: countryStyle,
-            bordered: true,
+            borderTint: .neutral,
             flagMono: true
         )
     }

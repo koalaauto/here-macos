@@ -1,12 +1,37 @@
 import AppKit
 
 enum StatusBarTitleRenderer {
+    /// Border-color bucket for the pill. Keyed to the most-recent latency
+    /// sample's classification so a glance at the menu bar tells the user
+    /// whether the connection is healthy without opening the popover.
+    /// `.neutral` is the default when latency isn't enabled, the probe
+    /// hasn't collected a sample yet, or the egress is in an
+    /// unknown state.
+    enum BorderTint: Sendable {
+        case neutral
+        case good
+        case moderate
+        case slow
+        case poor
+
+        @MainActor
+        var color: NSColor {
+            switch self {
+            case .neutral:  NSColor.labelColor.withAlphaComponent(0.65)
+            case .good:     NSColor.systemGreen.withAlphaComponent(0.85)
+            case .moderate: NSColor.systemYellow.withAlphaComponent(0.95)
+            case .slow:     NSColor.systemOrange.withAlphaComponent(0.9)
+            case .poor:     NSColor.systemRed.withAlphaComponent(0.9)
+            }
+        }
+    }
+
     struct Input: Sendable {
         let countryAlpha2: String?
         let regionCode: String?
         let showMode: ShowMode
         let countryStyle: CountryStyle
-        let bordered: Bool
+        let borderTint: BorderTint
         let flagMono: Bool
     }
 
@@ -25,9 +50,9 @@ enum StatusBarTitleRenderer {
         let alpha2 = input.countryAlpha2 ?? ""
         let region = input.regionCode?.uppercased() ?? "??"
 
-        // Inside the pill (bordered) the box already draws attention; shrink the flag
-        // to match. Without a pill, the flag carries the whole visual so give it room.
-        let flagHeight: CGFloat = input.bordered ? 10 : 14
+        // The pill already draws attention via its border, so shrink the
+        // flag to stay visually calm inside it.
+        let flagHeight: CGFloat = 10
 
         let showFlag = input.countryStyle == .flag && input.showMode != .regionOnly
         let flag: NSImage? = showFlag
@@ -44,7 +69,7 @@ enum StatusBarTitleRenderer {
             text = showFlag ? region : "\(alpha2.isEmpty ? "??" : alpha2) \(region)"
         }
 
-        return compose(flag: flag, text: text, bordered: input.bordered)
+        return compose(flag: flag, text: text, borderColor: input.borderTint.color)
     }
 
     private static func renderCountry(_ input: Input) -> String {
@@ -56,14 +81,11 @@ enum StatusBarTitleRenderer {
     }
 
     @MainActor
-    private static func compose(flag: NSImage?, text: String, bordered: Bool) -> NSImage? {
-        // Bordered pill drops 2pt off the menu bar default to stay visually calm;
-        // the un-bordered variant uses the full default so the label holds its
-        // own next to other menu bar items.
+    private static func compose(flag: NSImage?, text: String, borderColor: NSColor) -> NSImage? {
+        // Inside the pill we drop 2pt off the menu bar default to stay
+        // visually calm — the border frame already draws the eye.
         let defaultSize = NSFont.menuBarFont(ofSize: 0).pointSize
-        let font = bordered
-            ? NSFont.menuBarFont(ofSize: max(defaultSize - 2, 9))
-            : NSFont.menuBarFont(ofSize: defaultSize)
+        let font = NSFont.menuBarFont(ofSize: max(defaultSize - 2, 9))
         let textAttr: NSAttributedString? = text.isEmpty
             ? nil
             : NSAttributedString(
@@ -77,8 +99,8 @@ enum StatusBarTitleRenderer {
         let flagSize = flag?.size ?? .zero
 
         let spacing: CGFloat = (flag != nil && textAttr != nil) ? 3 : 0
-        let vPadding: CGFloat = bordered ? 1 : 0
-        let hPadding: CGFloat = bordered ? 4 : 0
+        let vPadding: CGFloat = 1
+        let hPadding: CGFloat = 4
 
         let contentWidth = flagSize.width + spacing + textSize.width
         let contentHeight = max(flagSize.height, textSize.height)
@@ -90,18 +112,15 @@ enum StatusBarTitleRenderer {
         let imageSize = NSSize(width: totalWidth, height: totalHeight)
 
         let image = NSImage(size: imageSize, flipped: false) { _ in
-            if bordered {
-                let borderColor = NSColor.labelColor.withAlphaComponent(0.65)
-                let rect = NSRect(
-                    x: 0.5, y: 0.5,
-                    width: imageSize.width - 1,
-                    height: imageSize.height - 1
-                )
-                let path = NSBezierPath(roundedRect: rect, xRadius: 4, yRadius: 4)
-                path.lineWidth = 1
-                borderColor.setStroke()
-                path.stroke()
-            }
+            let rect = NSRect(
+                x: 0.5, y: 0.5,
+                width: imageSize.width - 1,
+                height: imageSize.height - 1
+            )
+            let path = NSBezierPath(roundedRect: rect, xRadius: 4, yRadius: 4)
+            path.lineWidth = 1
+            borderColor.setStroke()
+            path.stroke()
 
             var x = hPadding
             if let flag {
