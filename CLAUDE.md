@@ -12,9 +12,14 @@ Long-term menu bar macOS app showing your current egress country/region. Default
 - Popover content rendered with SwiftUI via `NSHostingController`
 - All IP-lookup networking flows through `IPService` (actor) → an `IPProvider` (`IPWhoIsProvider` is the default); emits `IPState` via `AsyncStream`. Each provider owns its own raw-response shape and a `map(_:)` adapter into the shared `IPDataModel` — swapping providers is mechanical, not a UI / cache rewrite.
 - `RefreshScheduler` runs the IP refresh loop on a hardcoded 5 s cadence (30 s while the display is asleep). `NetworkMonitor` (`NWPathMonitor`) fires extra immediate refreshes on `becameReachable` / `pathChanged`; lid-wake does the same. The polling loop is the safety net for everything else — at 5 s, you don't need a custom `SCDynamicStore` observer to catch WiFi hops or proxy toggles.
-- `UpdateChecker` (actor) + `UpdateCoordinator` (@MainActor) handle "is there a new version on GitHub?". Coordinator owns the daily wake-up timer, persists `lastUpdateCheckAt` / `skippedUpdateVersion` in `SettingsStore`, and presents the NSAlert when an upgrade is available. We never auto-download — Download just opens the release page in the user's browser. Picker + Check now button live in General settings.
+- `UpdateChecker` (actor) + `UpdateInstaller` (actor) + `UpdateCoordinator` (@MainActor) handle the auto-update pipeline.
+  - **Checker**: hits GitHub `releases/latest`, returns `UpdateInfo` (version + release URL + DMG asset URL).
+  - **Coordinator**: owns the daily wake-up timer, persists `lastUpdateCheckAt` / `skippedUpdateVersion` in `SettingsStore`, presents the "Update available" alert and the install progress NSPanel.
+  - **Installer**: URLSession-downloads the DMG (intentionally avoids `com.apple.quarantine` xattr that browser downloads carry — that's how we skip the Gatekeeper "open anyway" prompt on every upgrade), `hdiutil attach`s it, `ditto`-copies `Here.app` to a staging dir, then writes a tiny bash relauncher that polls our PID, swaps `/Applications/Here.app`, and `open`s the new bundle. We `NSApp.terminate(nil)` ourselves; the script outlives us by being detached from our stdio.
+- Picker (Never / Once a day / Once a week) + Check now button live in General settings.
+- The popover footer's settings gear opens Settings via SwiftUI's `\.openSettings` env action; the right-click menu's Settings… item calls the same captured action through `AppEnvironment.openSettingsAction`. Don't try to open Settings via `NSApp.sendAction(showSettingsWindow:)` from AppKit code — for LSUIElement apps with no visible main menu it silently no-ops.
 - Settings use an `@Observable` `SettingsStore` with UserDefaults-backed properties (manual `didSet` persistence)
-- Cache at `~/Library/Containers/app.here-macos/Data/Library/Application Support/Here/last_ip.json`
+- Cache at `~/Library/Application Support/Here/last_ip.json` (we ship without App Sandbox — see `Here/Here.entitlements` for why; the in-app installer needs to spawn `hdiutil` and write outside the container).
 
 ## Prerequisites
 
@@ -54,6 +59,7 @@ Install full Xcode from the Mac App Store or developer.apple.com. `xcode-select 
 - The hand-written `project.pbxproj` uses a consistent ID scheme (`AA0000...`). When Xcode adds new files, it inserts its own UUIDs — fine; don't try to enforce the old scheme.
 - The popover anchors to an **invisible NSWindow** rather than directly to the menu-bar button (see `StatusBarController.openPopover`). This is the workaround for NSPopover sliding sideways when the widget reflows. **Re-verify on every macOS major upgrade**: open popover → click refresh several times → popover must stay put. If it drifts even one pixel, the workaround has regressed and we need to fall back to a custom NSPanel implementation.
 - `URLProtocolMock` (in `HereTests/Support/`) keeps its `handler` in a class-static slot. Swift Testing's `.serialized` only orders tests **within** a suite — different suites still run in parallel. Two suites both poking that single slot will race (we hit this when `UpdateCheckerTests` and `IPWhoIsProviderTests` collided over a 503 vs URLError handler). When you write a new mocked-URLSession suite, give it its own `URLProtocol` subclass (see `UpdateMockURLProtocol` inside `UpdateCheckerTests.swift`) instead of sharing the global one.
+- App Sandbox is **off** (`Here/Here.entitlements` is empty). Don't re-enable `com.apple.security.app-sandbox` without also rewriting the in-app installer — sandboxed processes can't `hdiutil attach` (the system service `diskimagesiod` denies sandbox-originated mount requests) and can't `mv` into `/Applications`. If the app ever needs to ship via the App Store, the installer becomes a privileged helper tool instead.
 
 ## Where things live
 
@@ -64,7 +70,7 @@ Install full Xcode from the Mac App Store or developer.apple.com. `xcode-select 
 - Add a new settings toggle → add a property + UserDefaults key in `SettingsStore`, bind to a control in the relevant `*SettingsView.swift`.
 - Add a new refresh trigger → observe inside `RefreshScheduler`; don't sprinkle triggers elsewhere.
 - Change widget border tint → `StatusBarTitleRenderer.BorderTint` + `StatusBarController.currentBorderTint()`.
-- Touch the update checker → wire format + comparison in `Networking/UpdateChecker.swift`; cadence + alert presentation in `Services/UpdateCoordinator.swift`. The frequency picker / "Check now" button live in `UI/Settings/GeneralSettingsView.swift`.
+- Touch the update flow → wire format + version compare in `Networking/UpdateChecker.swift`; download/mount/copy/relaunch in `Services/UpdateInstaller.swift`; cadence + alert + progress UI in `Services/UpdateCoordinator.swift`; the progress panel's view in `UI/UpdateProgressView.swift`. The frequency picker + Check now button live in `UI/Settings/GeneralSettingsView.swift`.
 
 ## When adding features
 
@@ -80,7 +86,7 @@ Install full Xcode from the Mac App Store or developer.apple.com. `xcode-select 
 - Multiple IP providers with failover (architecture is in place — `IPProvider` protocol with `map(_:)` adapters; just need a Settings picker + voting/fallback logic in `IPService`)
 - App Intents / Shortcuts integration
 - Chinese localization (scaffolding is ready; only translation pending)
-- Once a Developer ID lands: swap the manual update checker for Sparkle (silent download + atomic replace). Today's `UpdateChecker` is the bridge — unsigned builds can't do silent updates without re-tripping Gatekeeper, so we just open the release page in the browser.
+- Once a Developer ID lands: optionally migrate the in-app installer to Sparkle for ed25519-signed update feeds + delta updates. Today's `UpdateInstaller` already gives a one-click silent upgrade (URLSession download skips the quarantine xattr, so no Gatekeeper prompt) — Sparkle would mostly add provenance verification.
 
 ## Versioning
 

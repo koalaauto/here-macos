@@ -2,9 +2,20 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>com.apple.security.app-sandbox</key>
-	<true/>
-	<key>com.apple.security.network.client</key>
-	<true/>
+	<!--
+	App Sandbox is intentionally disabled.
+
+	Sandboxed apps can't mount disk images via `hdiutil attach` (the
+	system service `diskimagesiod` denies sandbox-originated mount
+	requests) and can't write outside their container, which together
+	break our in-app updater (download DMG → mount → ditto into
+	/Applications → relaunch). We're a non-App-Store, single-user
+	utility menu-bar app — sandbox doesn't add meaningful protection
+	for what we do (read public IP via HTTPS, render a popover) and
+	would block the upgrade UX.
+
+	If we ever need to ship via the App Store, sandbox comes back and
+	the in-app updater becomes a privileged helper tool instead.
+	-->
 </dict>
 </plist>

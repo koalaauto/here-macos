@@ -5,69 +5,57 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var environment = AppEnvironment()
     private var statusBarController: StatusBarController?
-    /// We don't use SwiftUI's `Settings { }` scene anymore — the
-    /// `NSApp.sendAction(Selector("showSettingsWindow:"))` route is
-    /// unreliable for LSUIElement apps with no main menu and no
-    /// already-open Settings window. Instead, we keep our own
-    /// retained `NSWindow` here, host the same `SettingsScene`
-    /// SwiftUI view inside it, and surface it on demand from the
-    /// status bar's right-click menu. Lazy init so the window only
-    /// allocates the first time the user actually asks for Settings.
-    private var settingsWindow: NSWindow?
+    /// Retains the hidden NSPanel that captures `\.openSettings` —
+    /// see `bootstrapOpenSettingsAction()`.
+    private var openSettingsBootstrapWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         statusBarController = StatusBarController(environment: environment)
         environment.start()
+        bootstrapOpenSettingsAction()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         environment.shutdown()
     }
 
-    /// Surface the Settings window. Used by the status bar context
-    /// menu and any future entry point that needs to open settings
-    /// without going through `NSApp.sendAction(showSettingsWindow:)`.
+    /// Stand up an invisible 1×1 NSPanel hosting a SwiftUI view that
+    /// captures `\.openSettings` and stashes it on `AppEnvironment`,
+    /// so AppKit code (the status bar's right-click menu) can open
+    /// the SwiftUI `Settings { … }` scene without going through the
+    /// flaky `NSApp.sendAction(showSettingsWindow:)` path.
     ///
-    /// The implementation creates a plain `NSWindow` hosting the
-    /// `SettingsScene` SwiftUI view. We do NOT use SwiftUI's `Settings`
-    /// scene because:
-    ///
-    /// 1. The `showSettingsWindow:` selector is dispatched via the
-    ///    responder chain. For LSUIElement apps with no visible main
-    ///    menu and no Settings window already on screen, the chain
-    ///    has no responder for that selector — the call silently
-    ///    no-ops. `DispatchQueue.main.async` deferral doesn't help
-    ///    (we tried; that's why this exists).
-    ///
-    /// 2. SwiftUI's `Settings` scene also intercepts `⌘,` and other
-    ///    auto-bindings. With our custom window we can wire those
-    ///    explicitly if we want, without relying on SwiftUI's
-    ///    invisible plumbing.
-    ///
-    /// The window is retained so re-opening reuses the same instance
-    /// (closing only orders it out, never deallocates).
-    func openSettings() {
-        NSApp.activate(ignoringOtherApps: true)
-
-        if settingsWindow == nil {
-            let host = NSHostingController(
-                rootView: SettingsScene()
-                    .environment(environment.settings)
-                    .environment(environment)
-            )
-            let window = NSWindow(contentViewController: host)
-            window.title = String(localized: "Here Settings")
-            window.styleMask = [.titled, .closable]
-            window.setContentSize(NSSize(width: 460, height: 380))
-            // Stop the runtime from releasing the window when the
-            // close button is hit. We want re-opens to reuse this
-            // instance so SettingsStore observers stay live.
-            window.isReleasedWhenClosed = false
-            window.center()
-            settingsWindow = window
+    /// The panel must be `.orderFrontRegardless`-ed for SwiftUI to
+    /// fire `onAppear` on the hosted view; alpha 0 + non-activating +
+    /// ignores-mouse keeps it inert.
+    private func bootstrapOpenSettingsAction() {
+        let bootstrap = OpenSettingsBootstrap { [weak self] action in
+            self?.environment.openSettingsAction = { action() }
         }
+        let panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 1, height: 1),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        panel.contentView = NSHostingView(rootView: bootstrap)
+        panel.alphaValue = 0
+        panel.ignoresMouseEvents = true
+        panel.hidesOnDeactivate = false
+        panel.isExcludedFromWindowsMenu = true
+        panel.orderFrontRegardless()
+        openSettingsBootstrapWindow = panel
+    }
+}
 
-        settingsWindow?.makeKeyAndOrderFront(nil)
+private struct OpenSettingsBootstrap: View {
+    @Environment(\.openSettings) private var openSettings
+    let register: (OpenSettingsAction) -> Void
+
+    var body: some View {
+        Color.clear
+            .frame(width: 1, height: 1)
+            .onAppear { register(openSettings) }
     }
 }

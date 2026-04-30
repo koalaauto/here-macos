@@ -314,19 +314,12 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     }
 
     @objc private func contextSettings() {
-        // We deliberately don't use `NSApp.sendAction(showSettingsWindow:,
-        // …)` here. That selector is routed through the responder chain,
-        // and for an LSUIElement app with no visible main menu and no
-        // already-open Settings window the chain has no responder for
-        // it — the call silently no-ops. Async-dispatching it didn't
-        // help (that was the v0.30.2 attempt). AppDelegate now owns a
-        // retained `NSWindow` hosting the SettingsScene view; we just
-        // ask it to surface that window.
-        guard let delegate = NSApp.delegate as? AppDelegate else {
-            Log.statusBar.error("AppDelegate unavailable; cannot open Settings")
-            return
-        }
-        delegate.openSettings()
+        // SwiftUI's `\.openSettings` action, captured at launch by
+        // AppDelegate. Reliable from any context — `NSApp.sendAction
+        // (showSettingsWindow:)` is not, in LSUIElement apps with no
+        // visible Settings window.
+        NSApp.activate(ignoringOtherApps: true)
+        environment.openSettingsAction?()
     }
 
     // MARK: - Observation

@@ -118,7 +118,8 @@ struct UpdateCheckerTests {
         name: String? = "v0.30.0",
         draft: Bool = false,
         prerelease: Bool = false,
-        body: String = "## Changes\n- Auto update support"
+        body: String = "## Changes\n- Auto update support",
+        includeDMGAsset: Bool = true
     ) -> Data {
         // Hand-build the JSON to avoid pulling in a proper encoder
         // — the wire shape is small and we want to test the decoder
@@ -129,6 +130,17 @@ struct UpdateCheckerTests {
         } else {
             nameField = "null"
         }
+        let strippedTag = tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
+        let assets: String = includeDMGAsset ? """
+        ,
+          "assets": [
+            {
+              "name": "Here-\(strippedTag).dmg",
+              "browser_download_url": "https://github.com/bikekoala/here-macos/releases/download/\(tag)/Here-\(strippedTag).dmg",
+              "size": 3000000
+            }
+          ]
+        """ : ""
         let json = """
         {
           "tag_name": "\(tag)",
@@ -137,7 +149,7 @@ struct UpdateCheckerTests {
           "body": \(escape(body)),
           "published_at": "2026-04-30T12:00:00Z",
           "draft": \(draft),
-          "prerelease": \(prerelease)
+          "prerelease": \(prerelease)\(assets)
         }
         """
         return Data(json.utf8)
@@ -152,7 +164,8 @@ struct UpdateCheckerTests {
     }
 
     /// Happy path: GitHub returns a newer tag, current is older →
-    /// checker reports an `UpdateInfo`.
+    /// checker reports an `UpdateInfo` populated with both the
+    /// release page URL and the direct DMG asset URL.
     @Test func reportsUpdateAvailableWhenTagIsNewer() async throws {
         UpdateMockURLProtocol.install { _ in (self.httpResponse(200), self.releaseJSON()) }
         defer { UpdateMockURLProtocol.clear() }
@@ -162,6 +175,22 @@ struct UpdateCheckerTests {
         #expect(info != nil)
         #expect(info?.latestVersion == "0.30.0")
         #expect(info?.releaseURL.absoluteString.contains("0.30.0") == true)
+        #expect(info?.dmgURL?.absoluteString.hasSuffix("/Here-0.30.0.dmg") == true)
+    }
+
+    /// Releases without a DMG attached (legacy tags) → `dmgURL` is
+    /// `nil` and the in-app installer flow falls back to opening the
+    /// release page.
+    @Test func dmgURLIsNilWhenNoAsset() async throws {
+        UpdateMockURLProtocol.install { _ in
+            (self.httpResponse(200), self.releaseJSON(includeDMGAsset: false))
+        }
+        defer { UpdateMockURLProtocol.clear() }
+
+        let checker = mockedChecker(currentVersion: "0.29.3")
+        let info = try await checker.checkForUpdate()
+        #expect(info != nil)
+        #expect(info?.dmgURL == nil)
     }
 
     /// Already on latest → nil. Important: the user shouldn't ever see

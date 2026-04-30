@@ -31,7 +31,7 @@
 
 /* Modules settings */
 "Popover module order" = "Popover module order";
-"Reorder cards shown below the IP header in the popover." = "Reorder cards shown below the IP header in the popover.";
+"Drag to reorder cards in the popover." = "Drag to reorder cards in the popover.";
 "Move up" = "Move up";
 "Move down" = "Move down";
 "Latency probe" = "Latency probe";
@@ -46,9 +46,9 @@
 "Cachefly (100 MB)" = "Cachefly (100 MB)";
 "Cloudflare (100 MB)" = "Cloudflare (100 MB)";
 "Custom URL" = "Custom URL";
-"Downloads a 100 MB test file from Cachefly's CDN. Widest global reach; default." = "Downloads a 100 MB test file from Cachefly's CDN. Widest global reach; default.";
-"Downloads 100 MB from speed.cloudflare.com. Blocked on some networks that SNI-filter Cloudflare's speed test host." = "Downloads 100 MB from speed.cloudflare.com. Blocked on some networks that SNI-filter Cloudflare's speed test host.";
-"Any HTTP or HTTPS file works. Larger files (≥ 10 MB) give a more stable reading. Blank or invalid URLs produce an error — no silent fallback." = "Any HTTP or HTTPS file works. Larger files (≥ 10 MB) give a more stable reading. Blank or invalid URLs produce an error — no silent fallback.";
+"100 MB from Cachefly CDN. Default." = "100 MB from Cachefly CDN. Default.";
+"100 MB from speed.cloudflare.com. Sometimes blocked." = "100 MB from speed.cloudflare.com. Sometimes blocked.";
+"Any HTTP or HTTPS URL. 10 MB or larger works best." = "Any HTTP or HTTPS URL. 10 MB or larger works best.";
 "Custom URL isn't a valid https:// URL." = "Custom URL isn't a valid https:// URL.";
 "Invalid URL" = "Invalid URL";
 "Valid URL" = "Valid URL";
@@ -129,9 +129,19 @@
 "Couldn't check for updates" = "Couldn't check for updates";
 "Open the release page to see what's new and download the new build." = "Open the release page to see what's new and download the new build.";
 "Download" = "Download";
+"Install" = "Install";
 "Skip this version" = "Skip this version";
 "Remind me later" = "Remind me later";
 "OK" = "OK";
+
+/* Update installer */
+"Updating Here" = "Updating Here";
+"Downloading update…" = "Downloading update…";
+"Mounting…" = "Mounting…";
+"Installing…" = "Installing…";
+"Restarting Here…" = "Restarting Here…";
+"Update failed" = "Update failed";
+"Couldn't install update" = "Couldn't install update";
 
 /* Update checker errors */
 "The update check timed out." = "The update check timed out.";

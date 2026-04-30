@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import SwiftUI
 
 /// Glue between `UpdateChecker`, `SettingsStore`, and the user-facing
 /// alert. Single place that:
@@ -18,15 +19,20 @@ import Foundation
 @MainActor
 final class UpdateCoordinator {
     private let checker: UpdateChecker
+    private let installer: UpdateInstaller
     private let settings: SettingsStore
     private var timerTask: Task<Void, Never>?
+    private var installTask: Task<Void, Never>?
+    private var progressWindow: NSPanel?
+    private var progressModel: UpdateProgressModel?
     /// Re-entrancy guard so a double-tap on "Check now" or a periodic
     /// tick landing on top of a manual click doesn't fire two
     /// parallel HTTP calls and two stacked alerts.
     private var inFlight = false
 
-    init(checker: UpdateChecker, settings: SettingsStore) {
+    init(checker: UpdateChecker, installer: UpdateInstaller, settings: SettingsStore) {
         self.checker = checker
+        self.installer = installer
         self.settings = settings
     }
 
@@ -57,6 +63,8 @@ final class UpdateCoordinator {
     func stop() {
         timerTask?.cancel()
         timerTask = nil
+        installTask?.cancel()
+        installTask = nil
     }
 
     /// Manual "Check now" — bypasses cadence and the skipped-version
@@ -124,26 +132,98 @@ final class UpdateCoordinator {
         alert.messageText = String(localized: "Here \(info.latestVersion) is available")
         alert.informativeText = Self.summarize(notes: info.releaseNotes)
         alert.alertStyle = .informational
-        alert.addButton(withTitle: String(localized: "Download"))
+        // Primary button label changes based on whether we have a DMG
+        // we can install in-place. For legacy releases without an
+        // attached .dmg we fall back to opening the release page.
+        let canInstall = info.dmgURL != nil
+        alert.addButton(withTitle: canInstall
+            ? String(localized: "Install")
+            : String(localized: "Download"))
         alert.addButton(withTitle: String(localized: "Skip this version"))
         alert.addButton(withTitle: String(localized: "Remind me later"))
 
-        // Bring Here forward so the modal isn't trapped behind whatever
-        // the user is currently looking at — we're an LSUIElement app
-        // with no Dock icon to click on.
         NSApp.activate(ignoringOtherApps: true)
         let response = alert.runModal()
         switch response {
         case .alertFirstButtonReturn:
-            NSWorkspace.shared.open(info.releaseURL)
+            if let dmgURL = info.dmgURL {
+                beginInstall(dmgURL: dmgURL)
+            } else {
+                NSWorkspace.shared.open(info.releaseURL)
+            }
         case .alertSecondButtonReturn:
             settings.skippedUpdateVersion = info.latestVersion
             Log.update.info("User skipped \(info.latestVersion, privacy: .public)")
         default:
-            // "Remind me later" — fall through; cadence will re-prompt
-            // at the next interval boundary.
+            // "Remind me later" — cadence will re-prompt at the next
+            // interval boundary.
             break
         }
+    }
+
+    private func beginInstall(dmgURL: URL) {
+        // Show progress window first so the user has feedback while
+        // the download spins up.
+        let model = UpdateProgressModel()
+        let window = makeProgressWindow(hosting: model)
+        progressWindow = window
+        progressModel = model
+        window.makeKeyAndOrderFront(nil)
+
+        installTask?.cancel()
+        installTask = Task { [installer, weak self] in
+            for await phase in await installer.install(dmgURL: dmgURL) {
+                guard let self else { break }
+                self.progressModel?.phase = phase
+                if case .failed(let reason) = phase {
+                    Log.update.error("Install failed: \(reason, privacy: .public)")
+                    // Hold the window up showing the error for a beat,
+                    // then dismiss + present a follow-up alert. We don't
+                    // close immediately because the SwiftUI view still
+                    // wants to render the failure state once.
+                    try? await Task.sleep(for: .seconds(1))
+                    self.dismissProgressWindow()
+                    self.presentInstallError(reason)
+                }
+            }
+        }
+    }
+
+    private func makeProgressWindow(hosting model: UpdateProgressModel) -> NSPanel {
+        let host = NSHostingView(rootView: UpdateProgressView(model: model))
+        host.frame = NSRect(x: 0, y: 0, width: 320, height: 120)
+        // No `.closable` — letting the user close mid-install would
+        // leave the install Task running with no UI feedback. The
+        // window dismisses itself on success (the app terminates) or
+        // on failure (we close it then show an error alert).
+        let panel = NSPanel(
+            contentRect: host.frame,
+            styleMask: [.titled, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        panel.title = String(localized: "Updating Here")
+        panel.contentView = host
+        panel.isFloatingPanel = true
+        panel.isReleasedWhenClosed = false
+        panel.center()
+        return panel
+    }
+
+    private func dismissProgressWindow() {
+        progressWindow?.close()
+        progressWindow = nil
+        progressModel = nil
+    }
+
+    private func presentInstallError(_ reason: String) {
+        let alert = NSAlert()
+        alert.messageText = String(localized: "Couldn't install update")
+        alert.informativeText = reason
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: String(localized: "OK"))
+        NSApp.activate(ignoringOtherApps: true)
+        alert.runModal()
     }
 
     private func presentUpToDate() {

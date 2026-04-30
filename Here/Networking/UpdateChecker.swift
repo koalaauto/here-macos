@@ -27,14 +27,16 @@ actor UpdateChecker {
     struct UpdateInfo: Equatable, Sendable {
         /// `tag_name` with the leading `v` stripped — `"0.30.0"`.
         let latestVersion: String
-        /// Human-readable name of the release; falls back to `tagName`
-        /// when GitHub returns `null` for `name`.
         let releaseName: String
-        /// Browser-friendly release page (`html_url`). The user clicks
-        /// through and downloads the DMG manually — the app never
-        /// fetches binaries on its own.
+        /// Browser-friendly release page. Used as fallback when no
+        /// DMG asset is attached to the release.
         let releaseURL: URL
-        /// Markdown body of the release notes. May be empty.
+        /// Direct DMG download URL extracted from the release's
+        /// `assets[*].browser_download_url`. `nil` for legacy
+        /// releases without a DMG attached. The in-app installer
+        /// pulls this via URLSession (no Gatekeeper quarantine xattr,
+        /// unlike browser downloads) and replaces the running app.
+        let dmgURL: URL?
         let releaseNotes: String
         let publishedAt: Date?
     }
@@ -125,10 +127,17 @@ actor UpdateChecker {
 
         switch Self.compare(latest, currentVersion) {
         case .orderedDescending:
+            // Pick the first `.dmg` asset. We only ever publish one
+            // DMG per release; if that ever changes the installer can
+            // grow a more careful filter (e.g. by version-in-name).
+            let dmgURL = release.assets?
+                .first(where: { $0.name.hasSuffix(".dmg") })?
+                .browserDownloadURL
             return UpdateInfo(
                 latestVersion: latest,
                 releaseName: release.name?.isEmpty == false ? release.name! : release.tagName,
                 releaseURL: release.htmlURL,
+                dmgURL: dmgURL,
                 releaseNotes: release.body ?? "",
                 publishedAt: release.publishedAt
             )
@@ -182,6 +191,19 @@ struct GitHubRelease: Decodable, Equatable, Sendable {
     let publishedAt: Date?
     let draft: Bool?
     let prerelease: Bool?
+    let assets: [Asset]?
+
+    struct Asset: Decodable, Equatable, Sendable {
+        let name: String
+        let browserDownloadURL: URL
+        let size: Int
+
+        enum CodingKeys: String, CodingKey {
+            case name
+            case browserDownloadURL = "browser_download_url"
+            case size
+        }
+    }
 
     enum CodingKeys: String, CodingKey {
         case tagName = "tag_name"
@@ -191,6 +213,7 @@ struct GitHubRelease: Decodable, Equatable, Sendable {
         case publishedAt = "published_at"
         case draft
         case prerelease
+        case assets
     }
 }
 

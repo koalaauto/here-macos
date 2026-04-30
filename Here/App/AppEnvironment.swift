@@ -16,6 +16,13 @@ final class AppEnvironment {
     let launchAtLogin: LaunchAtLoginService
     let updateCoordinator: UpdateCoordinator
 
+    /// SwiftUI's `\.openSettings` action, captured at launch by
+    /// `AppDelegate.bootstrapOpenSettingsAction()`. Calling this opens
+    /// the SwiftUI `Settings { … }` scene reliably from any context —
+    /// the fallback was `NSApp.sendAction(showSettingsWindow:)` which
+    /// is unreliable in LSUIElement apps.
+    @MainActor var openSettingsAction: (@MainActor () -> Void)?
+
     /// Background task that feeds new IP observations into the history
     /// service. Retained so we can cancel on shutdown.
     @MainActor private var stateObserverTask: Task<Void, Never>?
@@ -48,6 +55,7 @@ final class AppEnvironment {
         let launchAtLogin = LaunchAtLoginService()
         let updateCoordinator = UpdateCoordinator(
             checker: UpdateChecker(),
+            installer: UpdateInstaller(),
             settings: settings
         )
 

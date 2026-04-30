@@ -16,7 +16,7 @@ struct ModulesSettingsView: View {
             } header: {
                 Text(String(localized: "Popover module order"))
             } footer: {
-                Text(String(localized: "Reorder cards shown below the IP header in the popover."))
+                Text(String(localized: "Drag to reorder cards in the popover."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -127,11 +127,11 @@ struct ModulesSettingsView: View {
     private func throughputFooterText() -> String {
         switch settings.throughputEndpoint {
         case .cachefly:
-            return String(localized: "Downloads a 100 MB test file from Cachefly's CDN. Widest global reach; default.")
+            return String(localized: "100 MB from Cachefly CDN. Default.")
         case .cloudflare:
-            return String(localized: "Downloads 100 MB from speed.cloudflare.com. Blocked on some networks that SNI-filter Cloudflare's speed test host.")
+            return String(localized: "100 MB from speed.cloudflare.com. Sometimes blocked.")
         case .custom:
-            return String(localized: "Any HTTP or HTTPS file works. Larger files (≥ 10 MB) give a more stable reading. Blank or invalid URLs produce an error — no silent fallback.")
+            return String(localized: "Any HTTP or HTTPS URL. 10 MB or larger works best.")
         }
     }
 
