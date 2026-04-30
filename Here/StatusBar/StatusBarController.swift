@@ -314,36 +314,19 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     }
 
     @objc private func contextSettings() {
-        // `NSApp.activate(...)` posts an event but doesn't drain the
-        // queue synchronously, and we're called from inside an NSMenu
-        // action handler — the menu's own dismissal isn't done yet
-        // either. If we call `sendAction` immediately, the responder
-        // chain is still mid-rebuild and `showSettingsWindow:` has
-        // nowhere to land, so AppKit silently no-ops the click.
-        //
-        // For an LSUIElement app with no Dock icon and no visible
-        // Settings window, this race is the default outcome rather
-        // than the exception. Async-deferring the action to the next
-        // runloop turn lets the activation event settle and SwiftUI's
-        // Settings scene plug into the responder chain before we send
-        // the selector.
-        //
-        // Both selectors are tried because Apple renamed the API at
-        // macOS 13 (`showPreferencesWindow:` → `showSettingsWindow:`).
-        // We deploy 15+ so the new one is what works in practice; the
-        // fallback is belt-and-braces in case the new selector ever
-        // fails to dispatch (unrelated SwiftUI bugs have caused this
-        // mid-OS update before).
-        NSApp.activate(ignoringOtherApps: true)
-        DispatchQueue.main.async {
-            if NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) {
-                return
-            }
-            if NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil) {
-                return
-            }
-            Log.statusBar.error("Failed to dispatch Settings open action")
+        // We deliberately don't use `NSApp.sendAction(showSettingsWindow:,
+        // …)` here. That selector is routed through the responder chain,
+        // and for an LSUIElement app with no visible main menu and no
+        // already-open Settings window the chain has no responder for
+        // it — the call silently no-ops. Async-dispatching it didn't
+        // help (that was the v0.30.2 attempt). AppDelegate now owns a
+        // retained `NSWindow` hosting the SettingsScene view; we just
+        // ask it to surface that window.
+        guard let delegate = NSApp.delegate as? AppDelegate else {
+            Log.statusBar.error("AppDelegate unavailable; cannot open Settings")
+            return
         }
+        delegate.openSettings()
     }
 
     // MARK: - Observation
