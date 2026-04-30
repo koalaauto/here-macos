@@ -14,6 +14,7 @@ final class AppEnvironment {
     let scheduler: RefreshScheduler
     let latencyScheduler: LatencyScheduler
     let launchAtLogin: LaunchAtLoginService
+    let updateCoordinator: UpdateCoordinator
 
     /// Background task that feeds new IP observations into the history
     /// service. Retained so we can cancel on shutdown.
@@ -45,6 +46,10 @@ final class AppEnvironment {
             sleepWakeObserver: sleepWakeObserver
         )
         let launchAtLogin = LaunchAtLoginService()
+        let updateCoordinator = UpdateCoordinator(
+            checker: UpdateChecker(),
+            settings: settings
+        )
 
         self.cache = cache
         self.settings = settings
@@ -58,6 +63,7 @@ final class AppEnvironment {
         self.scheduler = scheduler
         self.latencyScheduler = latencyScheduler
         self.launchAtLogin = launchAtLogin
+        self.updateCoordinator = updateCoordinator
     }
 
     @MainActor
@@ -66,6 +72,7 @@ final class AppEnvironment {
         sleepWakeObserver.start()
         scheduler.start()
         latencyScheduler.start()
+        updateCoordinator.start()
         startStateObservation()
         // Cold-start refresh: silent so the popover doesn't blur its
         // cached snapshot on first opens; if there's no cache the UI
@@ -79,6 +86,7 @@ final class AppEnvironment {
         stateObserverTask = nil
         scheduler.stop()
         latencyScheduler.stop()
+        updateCoordinator.stop()
         sleepWakeObserver.stop()
         networkMonitor.stop()
     }

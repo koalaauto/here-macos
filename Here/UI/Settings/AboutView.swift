@@ -13,43 +13,114 @@ private enum IconDesign {
 
 struct AboutView: View {
     @Environment(\.openURL) private var openURL
+    @Environment(SettingsStore.self) private var settings
+    @Environment(AppEnvironment.self) private var environment
+    @State private var checking = false
 
     var body: some View {
-        VStack(spacing: 10) {
-            AppIconView()
-                .frame(width: 88, height: 88)
+        @Bindable var settings = settings
 
-            Text("Here")
-                .font(.title2)
-                .fontWeight(.semibold)
+        VStack(spacing: 14) {
+            VStack(spacing: 8) {
+                AppIconView()
+                    .frame(width: 80, height: 80)
 
-            Text(versionString)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
+                Text("Here")
+                    .font(.title2)
+                    .fontWeight(.semibold)
 
-            Button {
-                if let url = URL(string: "https://github.com/bikekoala/here-macos") {
-                    openURL(url)
+                Text(versionString)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+
+                Button {
+                    if let url = URL(string: "https://github.com/bikekoala/here-macos") {
+                        openURL(url)
+                    }
+                } label: {
+                    Label(
+                        String(localized: "Source on GitHub"),
+                        systemImage: "chevron.left.forwardslash.chevron.right"
+                    )
                 }
-            } label: {
-                Label(String(localized: "Source on GitHub"), systemImage: "chevron.left.forwardslash.chevron.right")
+                .buttonStyle(.link)
+                .pointerStyle(.link)
+                .font(.caption)
             }
-            .buttonStyle(.link)
-            .pointerStyle(.link)
-            .font(.caption)
-            .padding(.top, 4)
 
-            Spacer()
+            Divider()
+                .padding(.horizontal, 24)
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(String(localized: "Check for updates"))
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    Spacer()
+                    Picker("", selection: $settings.updateCheckFrequency) {
+                        ForEach(UpdateCheckFrequency.allCases) { freq in
+                            Text(freq.localizedTitle).tag(freq)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .frame(width: 140)
+                }
+
+                HStack(spacing: 8) {
+                    Button {
+                        Task { await runCheckNow() }
+                    } label: {
+                        if checking {
+                            HStack(spacing: 6) {
+                                ProgressView().controlSize(.small)
+                                Text(String(localized: "Checking…"))
+                            }
+                        } else {
+                            Text(String(localized: "Check now"))
+                        }
+                    }
+                    .disabled(checking)
+                    .controlSize(.small)
+
+                    Spacer()
+
+                    Text(lastCheckedDescription(settings.lastUpdateCheckAt))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+            }
+            .padding(.horizontal, 24)
+
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+    }
+
+    private func runCheckNow() async {
+        checking = true
+        defer { checking = false }
+        await environment.updateCoordinator.checkNow()
     }
 
     private var versionString: String {
         let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
         return "\(short) (\(build))"
+    }
+
+    private func lastCheckedDescription(_ date: Date?) -> String {
+        guard let date else {
+            return String(localized: "Never checked")
+        }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        let relative = formatter.localizedString(for: date, relativeTo: Date())
+        return String(localized: "Last checked \(relative)")
     }
 }
 

@@ -76,6 +76,42 @@ final class SettingsStore {
         didSet { UserDefaults.standard.set(throughputCustomURL, forKey: Keys.throughputCustomURL) }
     }
 
+    /// How often to poll GitHub for a newer release.
+    /// Defaults to `.daily` — see `UpdateCheckFrequency` for the
+    /// rationale on the available cadences.
+    var updateCheckFrequency: UpdateCheckFrequency {
+        didSet { UserDefaults.standard.set(updateCheckFrequency.rawValue, forKey: Keys.updateCheckFrequency) }
+    }
+
+    /// Wall-clock time of the last successful (or attempted-and-failed)
+    /// GitHub release check. The scheduler uses this to enforce the
+    /// `updateCheckFrequency` interval. Updated by `UpdateCoordinator`,
+    /// not directly by the picker.
+    var lastUpdateCheckAt: Date? {
+        didSet {
+            if let date = lastUpdateCheckAt {
+                UserDefaults.standard.set(date, forKey: Keys.lastUpdateCheckAt)
+            } else {
+                UserDefaults.standard.removeObject(forKey: Keys.lastUpdateCheckAt)
+            }
+        }
+    }
+
+    /// Version the user explicitly chose to skip (clicked "Skip this
+    /// version" in the update-available alert). When non-nil and equal
+    /// to the latest GitHub tag, the auto-check stays silent. Manual
+    /// "Check now" still surfaces the alert — the skip is a soft
+    /// suppression, not a permanent block.
+    var skippedUpdateVersion: String? {
+        didSet {
+            if let version = skippedUpdateVersion {
+                UserDefaults.standard.set(version, forKey: Keys.skippedUpdateVersion)
+            } else {
+                UserDefaults.standard.removeObject(forKey: Keys.skippedUpdateVersion)
+            }
+        }
+    }
+
     /// Concrete URL the throughput run should hit. `nil` only when
     /// `.custom` is selected with an empty/invalid URL — in that case
     /// the Run Test handler surfaces a failure rather than substituting
@@ -145,6 +181,15 @@ final class SettingsStore {
             self.throughputCustomURL = legacyCustomURL
         }
 
+        // Update-check settings. Default cadence is daily — see
+        // UpdateCheckFrequency for the trade-off; users on the
+        // unsigned-build path can drop to `.never` if they prefer to
+        // upgrade manually.
+        self.updateCheckFrequency = (defaults.string(forKey: Keys.updateCheckFrequency)
+            .flatMap(UpdateCheckFrequency.init(rawValue:))) ?? .daily
+        self.lastUpdateCheckAt = defaults.object(forKey: Keys.lastUpdateCheckAt) as? Date
+        self.skippedUpdateVersion = defaults.string(forKey: Keys.skippedUpdateVersion)
+
         // `didSet` doesn't fire during init, so any values we coerced above
         // still sit in UserDefaults in their pre-migration form and would
         // migrate again on every launch. Write the canonical values back
@@ -187,5 +232,8 @@ final class SettingsStore {
         // Legacy v0.20.0 keys — read once on launch for migration, never written.
         static let legacyThroughputUseCustomEndpoint = "throughput.useCustomEndpoint"
         static let legacyThroughputCustomEndpoint = "throughput.customEndpoint"
+        static let updateCheckFrequency = "update.frequency"
+        static let lastUpdateCheckAt = "update.lastCheckedAt"
+        static let skippedUpdateVersion = "update.skippedVersion"
     }
 }

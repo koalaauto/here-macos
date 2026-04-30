@@ -12,4 +12,5 @@ enum Log {
     static let geocode    = Logger(subsystem: subsystem, category: "geocode")
     static let sleepWake  = Logger(subsystem: subsystem, category: "sleep-wake")
     static let launch     = Logger(subsystem: subsystem, category: "launch-at-login")
+    static let update     = Logger(subsystem: subsystem, category: "update-checker")
 }

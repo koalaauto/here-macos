@@ -71,6 +71,10 @@
 		AA0000000000000030000071 /* ipwhois_hk_response.json in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000071 /* ipwhois_hk_response.json */; };
 		AA0000000000000030000072 /* ipwhois_failure_response.json in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000072 /* ipwhois_failure_response.json */; };
 		AA0000000000000030000073 /* IPWhoIsProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000073 /* IPWhoIsProviderTests.swift */; };
+		AA0000000000000030000080 /* UpdateCheckFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000080 /* UpdateCheckFrequency.swift */; };
+		AA0000000000000030000081 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000081 /* UpdateChecker.swift */; };
+		AA0000000000000030000082 /* UpdateCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000082 /* UpdateCoordinator.swift */; };
+		AA0000000000000030000083 /* UpdateCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000083 /* UpdateCheckerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -140,6 +144,10 @@
 		AA0000000000000020000071 /* ipwhois_hk_response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ipwhois_hk_response.json; sourceTree = "<group>"; };
 		AA0000000000000020000072 /* ipwhois_failure_response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ipwhois_failure_response.json; sourceTree = "<group>"; };
 		AA0000000000000020000073 /* IPWhoIsProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPWhoIsProviderTests.swift; sourceTree = "<group>"; };
+		AA0000000000000020000080 /* UpdateCheckFrequency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckFrequency.swift; sourceTree = "<group>"; };
+		AA0000000000000020000081 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
+		AA0000000000000020000082 /* UpdateCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCoordinator.swift; sourceTree = "<group>"; };
+		AA0000000000000020000083 /* UpdateCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckerTests.swift; sourceTree = "<group>"; };
 		AA0000000000000020000050 /* Here.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Here.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000000000000020000051 /* HereTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HereTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -230,6 +238,7 @@
 				AA0000000000000020000028 /* LatencyService.swift */,
 				AA000000000000002000004B /* IPHistoryService.swift */,
 				AA000000000000002000004D /* ThroughputService.swift */,
+				AA0000000000000020000081 /* UpdateChecker.swift */,
 			);
 			path = Networking;
 			sourceTree = "<group>";
@@ -245,6 +254,7 @@
 				AA0000000000000020000048 /* IPChangeEvent.swift */,
 				AA000000000000002000004A /* ThroughputResult.swift */,
 				AA0000000000000020000053 /* ThroughputEndpoint.swift */,
+				AA0000000000000020000080 /* UpdateCheckFrequency.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -277,6 +287,7 @@
 				AA0000000000000020000025 /* FlagRenderer.swift */,
 				AA0000000000000020000055 /* BundledFlags.swift */,
 				AA0000000000000020000016 /* Clipboard.swift */,
+				AA0000000000000020000082 /* UpdateCoordinator.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -367,6 +378,7 @@
 				AA0000000000000020000044 /* CountryFlagTests.swift */,
 				AA0000000000000020000045 /* StatusBarTitleRendererTests.swift */,
 				AA0000000000000020000046 /* IPCacheTests.swift */,
+				AA0000000000000020000083 /* UpdateCheckerTests.swift */,
 			);
 			path = HereTests;
 			sourceTree = "<group>";
@@ -544,6 +556,9 @@
 				AA0000000000000030000061 /* IPWhoIsProvider.swift in Sources */,
 				AA0000000000000030000053 /* ThroughputEndpoint.swift in Sources */,
 				AA0000000000000030000055 /* BundledFlags.swift in Sources */,
+				AA0000000000000030000080 /* UpdateCheckFrequency.swift in Sources */,
+				AA0000000000000030000081 /* UpdateChecker.swift in Sources */,
+				AA0000000000000030000082 /* UpdateCoordinator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -559,6 +574,7 @@
 				AA0000000000000030000044 /* CountryFlagTests.swift in Sources */,
 				AA0000000000000030000045 /* StatusBarTitleRendererTests.swift in Sources */,
 				AA0000000000000030000046 /* IPCacheTests.swift in Sources */,
+				AA0000000000000030000083 /* UpdateCheckerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

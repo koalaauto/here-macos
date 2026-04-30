@@ -111,3 +111,32 @@
 "Got an unexpected response from ipwho.is." = "Got an unexpected response from ipwho.is.";
 "Network error: %@" = "Network error: %@";
 "Request cancelled." = "Request cancelled.";
+
+/* About — Source */
+"Source on GitHub" = "Source on GitHub";
+
+/* About — Update checker */
+"Check for updates" = "Check for updates";
+"Check now" = "Check now";
+"Checking…" = "Checking…";
+"Never" = "Never";
+"Once a day" = "Once a day";
+"Once a week" = "Once a week";
+"Never checked" = "Never checked";
+"Last checked %@" = "Last checked %@";
+"Here %@ is available" = "Here %@ is available";
+"Here %@ is the latest version." = "Here %@ is the latest version.";
+"You're up to date" = "You're up to date";
+"Couldn't check for updates" = "Couldn't check for updates";
+"Open the release page to see what's new and download the new build." = "Open the release page to see what's new and download the new build.";
+"Download" = "Download";
+"Skip this version" = "Skip this version";
+"Remind me later" = "Remind me later";
+"OK" = "OK";
+
+/* Update checker errors */
+"The update check timed out." = "The update check timed out.";
+"Couldn't reach GitHub: %@" = "Couldn't reach GitHub: %@";
+"GitHub returned an error (%d)." = "GitHub returned an error (%d).";
+"Couldn't read GitHub's response." = "Couldn't read GitHub's response.";
+"Update check cancelled." = "Update check cancelled.";
