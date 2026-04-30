@@ -21,9 +21,10 @@ Click for the popover:
 
 ## Smart enough to keep up
 
-- Catches **every** meaningful network change — WiFi hops, VPN up/down, Clash "system proxy" flips — by layering `NWPathMonitor` on top of `SCDynamicStore`.
-- **One shot per change.** No retry storms. Fails fast, cools down, respects your sanity.
+- Catches **every** meaningful network change — WiFi hops, VPN up/down, Clash "system proxy" flips. The widget rechecks on a 5-second loop (30s while the display is asleep), so a node switch lands in your menu bar within one tick.
+- **One shot per change.** No retry storms. Fails fast, respects your sanity.
 - Flag follows the **geographic country**, not the ASN country. A VPN registered in HK but serving a Taiwan node shows 🇹🇼, not 🇭🇰.
+- **Self-updating.** Daily check against GitHub releases (Never / Once a day / Once a week, your call) — when there's a new build it nudges you with the release notes and a one-click jump to the download.
 
 ## Install
 

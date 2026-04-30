@@ -122,8 +122,7 @@
 "Never" = "Never";
 "Once a day" = "Once a day";
 "Once a week" = "Once a week";
-"Never checked" = "Never checked";
-"Last checked %@" = "Last checked %@";
+"Last checked" = "Last checked";
 "Here %@ is available" = "Here %@ is available";
 "Here %@ is the latest version." = "Here %@ is the latest version.";
 "You're up to date" = "You're up to date";

@@ -11,10 +11,8 @@ Long-term menu bar macOS app showing your current egress country/region. Default
 - `StatusBarController` owns `NSStatusItem` + `NSPopover` (AppKit-managed)
 - Popover content rendered with SwiftUI via `NSHostingController`
 - All IP-lookup networking flows through `IPService` (actor) → an `IPProvider` (`IPWhoIsProvider` is the default); emits `IPState` via `AsyncStream`. Each provider owns its own raw-response shape and a `map(_:)` adapter into the shared `IPDataModel` — swapping providers is mechanical, not a UI / cache rewrite.
-- Network state change detection split across two observers:
-  - `NetworkMonitor` — `NWPathMonitor`, for online/offline + interface-type shifts + same-type path updates (debounced)
-  - `SystemNetworkObserver` — `SCDynamicStore` watching `State:/Network/Global/IPv4`, `…/DNS`, `…/Proxies`; catches WiFi-SSID changes and Clash "system proxy" flips that NWPathMonitor doesn't surface
-- `RefreshScheduler` is the single place that turns those signals into `ipService.refresh(force: true)`; snapshot-scoped burst coalesce + post-error cooldown so a single network change produces exactly one probe
+- `RefreshScheduler` runs the IP refresh loop on a hardcoded 5 s cadence (30 s while the display is asleep). `NetworkMonitor` (`NWPathMonitor`) fires extra immediate refreshes on `becameReachable` / `pathChanged`; lid-wake does the same. The polling loop is the safety net for everything else — at 5 s, you don't need a custom `SCDynamicStore` observer to catch WiFi hops or proxy toggles.
+- `UpdateChecker` (actor) + `UpdateCoordinator` (@MainActor) handle "is there a new version on GitHub?". Coordinator owns the daily wake-up timer, persists `lastUpdateCheckAt` / `skippedUpdateVersion` in `SettingsStore`, and presents the NSAlert when an upgrade is available. We never auto-download — Download just opens the release page in the user's browser. Picker + Check now button live in General settings.
 - Settings use an `@Observable` `SettingsStore` with UserDefaults-backed properties (manual `didSet` persistence)
 - Cache at `~/Library/Containers/app.here-macos/Data/Library/Application Support/Here/last_ip.json`
 
@@ -45,7 +43,6 @@ Install full Xcode from the Mac App Store or developer.apple.com. `xcode-select 
 
 ## Known gotchas
 
-- `NWPathMonitor` doesn't reliably fire `pathUpdateHandler` for same-interface-type changes (WiFi-A → WiFi-B on the same `en0`). That's why `SystemNetworkObserver` exists alongside it. Don't collapse them into one source; each catches what the other misses.
 - `SMAppService.mainApp.register()` works from any signed bundle path on macOS 13+, including Debug builds running from DerivedData. Earlier-era "must live in /Applications" guidance is no longer accurate; don't re-add that gate. Surface registration errors inline only when `register()` actually throws.
 - IP providers don't ship ISO 3166-2 region codes. `RegionMapper` uses `CLGeocoder` with a city-initials fallback. See `Services/RegionMapper.swift` for the ordering.
 - Flag emoji for Taiwan (TW) may render as "TW" text on some system configurations — offer text fallback via `CountryStyle.text`.
@@ -53,10 +50,10 @@ Install full Xcode from the Mac App Store or developer.apple.com. `xcode-select 
 - Never "fall back" to ASN-registered country for the flag — VPN ASNs routinely register in a different country than their actual egress (NL-registered AS serving KR users, HK-registered AS serving TW users). Use `location` data from the provider; if the provider lies, switch providers.
 - `CLGeocoder` is rate-limited by Apple; always rely on `RegionMapper`'s in-actor cache before issuing a new request.
 - `IPService` does **not** retry internally (single attempt per `refresh()` call). The scheduler is the retry layer — via periodic timer + network events. Don't re-add exponential backoff inside IPService; a failed fetch for an unreachable upstream would hammer the host for ~45 s.
-- `RefreshScheduler` coalesce is **snapshot-scoped**, not purely time-based. A time-only "post-error cooldown" blocks genuine re-switches to a different network. The scheduler reads `systemNetworkObserver.primaryIPv4Snapshot()` and only suppresses events whose snapshot matches the one that last failed.
 - `NSPopover` `.transient` dismiss timing can be flaky under focus steal. If reported, look at `NSEvent.addGlobalMonitorForEvents` as a workaround.
 - The hand-written `project.pbxproj` uses a consistent ID scheme (`AA0000...`). When Xcode adds new files, it inserts its own UUIDs — fine; don't try to enforce the old scheme.
 - The popover anchors to an **invisible NSWindow** rather than directly to the menu-bar button (see `StatusBarController.openPopover`). This is the workaround for NSPopover sliding sideways when the widget reflows. **Re-verify on every macOS major upgrade**: open popover → click refresh several times → popover must stay put. If it drifts even one pixel, the workaround has regressed and we need to fall back to a custom NSPanel implementation.
+- `URLProtocolMock` (in `HereTests/Support/`) keeps its `handler` in a class-static slot. Swift Testing's `.serialized` only orders tests **within** a suite — different suites still run in parallel. Two suites both poking that single slot will race (we hit this when `UpdateCheckerTests` and `IPWhoIsProviderTests` collided over a 503 vs URLError handler). When you write a new mocked-URLSession suite, give it its own `URLProtocol` subclass (see `UpdateMockURLProtocol` inside `UpdateCheckerTests.swift`) instead of sharing the global one.
 
 ## Where things live
 
@@ -67,6 +64,7 @@ Install full Xcode from the Mac App Store or developer.apple.com. `xcode-select 
 - Add a new settings toggle → add a property + UserDefaults key in `SettingsStore`, bind to a control in the relevant `*SettingsView.swift`.
 - Add a new refresh trigger → observe inside `RefreshScheduler`; don't sprinkle triggers elsewhere.
 - Change widget border tint → `StatusBarTitleRenderer.BorderTint` + `StatusBarController.currentBorderTint()`.
+- Touch the update checker → wire format + comparison in `Networking/UpdateChecker.swift`; cadence + alert presentation in `Services/UpdateCoordinator.swift`. The frequency picker / "Check now" button live in `UI/Settings/GeneralSettingsView.swift`.
 
 ## When adding features
 
@@ -82,7 +80,7 @@ Install full Xcode from the Mac App Store or developer.apple.com. `xcode-select 
 - Multiple IP providers with failover (architecture is in place — `IPProvider` protocol with `map(_:)` adapters; just need a Settings picker + voting/fallback logic in `IPService`)
 - App Intents / Shortcuts integration
 - Chinese localization (scaffolding is ready; only translation pending)
-- Sparkle auto-updater for notarized distribution
+- Once a Developer ID lands: swap the manual update checker for Sparkle (silent download + atomic replace). Today's `UpdateChecker` is the bridge — unsigned builds can't do silent updates without re-tripping Gatekeeper, so we just open the release page in the browser.
 
 ## Versioning
 
