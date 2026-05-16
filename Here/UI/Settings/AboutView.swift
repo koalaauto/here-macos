@@ -1,16 +1,5 @@
 import SwiftUI
 
-/// Colors and symbol shared between `scripts/generate_icon.swift` (which builds
-/// the real app-icon PNGs) and this in-app About view. Keep them in sync when
-/// updating the icon design.
-private enum IconDesign {
-    static let gradientTop = Color(red: 0.22, green: 0.67, blue: 0.82)
-    static let gradientBottom = Color(red: 0.09, green: 0.32, blue: 0.66)
-    static let symbolName = "globe.americas.fill"
-    static let cornerRadiusRatio: CGFloat = 0.22
-    static let symbolSizeRatio: CGFloat = 0.62
-}
-
 struct AboutView: View {
     @Environment(\.openURL) private var openURL
 
@@ -53,31 +42,15 @@ struct AboutView: View {
     }
 }
 
-/// SwiftUI-rendered stand-in for the app icon — avoids the padded "icon template"
-/// that `NSImage(named: NSImage.applicationIconName)` returns, which makes the
-/// artwork shrink inside its frame.
+/// The shipped app-icon artwork. Renders the raster `AppIconArtwork`
+/// image set (the same source PNG the `AppIcon` app-icon set is
+/// generated from) rather than `NSImage(named:
+/// NSImage.applicationIconName)`, which returns a padded
+/// icon-template that visibly shrinks the artwork inside its frame.
 private struct AppIconView: View {
     var body: some View {
-        GeometryReader { geo in
-            let size = min(geo.size.width, geo.size.height)
-            ZStack {
-                RoundedRectangle(cornerRadius: size * IconDesign.cornerRadiusRatio, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [IconDesign.gradientTop, IconDesign.gradientBottom],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                Image(systemName: IconDesign.symbolName)
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundStyle(.white, .white.opacity(0.55))
-                    .frame(width: size * IconDesign.symbolSizeRatio,
-                           height: size * IconDesign.symbolSizeRatio)
-            }
-            .frame(width: size, height: size)
-        }
-        .aspectRatio(1, contentMode: .fit)
+        Image("AppIconArtwork")
+            .resizable()
+            .scaledToFit()
     }
 }

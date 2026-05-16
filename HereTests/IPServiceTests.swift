@@ -42,6 +42,20 @@ struct IPServiceTests {
         var attemptCount: Int { counter.count }
     }
 
+    /// A provider whose `fetch()` never returns within any sane test
+    /// horizon — stands in for the real-world failure where URLSession
+    /// wedges in a TLS handshake / half-open proxied connection and
+    /// ignores its own timeout. `Task.sleep` is cancellation-aware,
+    /// so when `withHardTimeout` cancels the operation task this
+    /// unwinds cleanly (mirrors `URLSession.data(for:)`'s behaviour).
+    struct HangingProvider: IPProvider {
+        let name = "hang"
+        func fetch() async throws -> IPDataModel {
+            try await Task.sleep(for: .seconds(3600))
+            fatalError("unreachable: cancelled long before this")
+        }
+    }
+
     /// Build a synthetic `IPDataModel` directly via memberwise init.
     /// The model is no longer the JSON wire format of any provider —
     /// providers each own their own raw shape and a `map(_:)` adapter,
@@ -109,6 +123,47 @@ struct IPServiceTests {
         let state = await service.refresh(force: true)
         if case .error = state { } else { Issue.record("Expected .error") }
         #expect(provider.attemptCount == 1)
+    }
+
+    /// Regression: a `fetch()` that never returns (URLSession
+    /// ignoring its own timeout, as happens across sleep/wake or a
+    /// proxy flap) must not wedge the actor. Before the hard-timeout
+    /// backstop this `refresh()` would hang forever, leaving
+    /// `inflight` set and freezing every later loop tick / network
+    /// event / manual refresh — the "widget stuck on Updated N min
+    /// ago for hours" bug. The deadline must convert it into a
+    /// recoverable `.error(.timeout)`.
+    @Test func hungFetchTimesOutInsteadOfWedging() async {
+        let service = IPService(
+            provider: HangingProvider(),
+            cache: ephemeralCache(),
+            fetchHardTimeout: 0.2
+        )
+        let start = Date()
+        let state = await service.refresh(force: true)
+        let elapsed = Date().timeIntervalSince(start)
+
+        if case .error(let err, _, _) = state {
+            #expect(err == .timeout)
+        } else {
+            Issue.record("Expected .error(.timeout) for a hung fetch, got \(state)")
+        }
+        // Must return on the deadline's order of magnitude, not the
+        // provider's 3600 s. Generous upper bound to stay non-flaky
+        // under CI load.
+        #expect(elapsed < 5)
+
+        // And the actor must be usable again afterwards — a second
+        // refresh isn't parked on the dead first one.
+        let model = sampleModel()
+        let service2 = IPService(
+            provider: StubProvider(pages: [.success(model)]),
+            cache: ephemeralCache()
+        )
+        let recovered = await service2.refresh(force: true)
+        if case .loaded = recovered {} else {
+            Issue.record("Expected .loaded after recovery, got \(recovered)")
+        }
     }
 
     @Test func errorStateFallsBackToCache() async throws {

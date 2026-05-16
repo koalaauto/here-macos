@@ -4,6 +4,23 @@ actor IPService {
     private let provider: IPProvider
     private let cache: IPCache
     private let minimumGap: TimeInterval = 5
+    /// Independent wall-clock backstop around a single
+    /// `provider.fetch()`. URLSession's own
+    /// `timeoutIntervalForResource` (10 s) is the normal limit, but
+    /// it is *not* reliable on macOS: a task can wedge in TLS
+    /// handshake or a half-open proxied connection across a
+    /// sleep/wake or a proxy (Clash/Surge "system proxy") flap and
+    /// neither URLSession timer ever fires. When that happens
+    /// `refresh()` never returns, `inflight` is never cleared, and
+    /// every later caller — the 5 s loop tick, a network-change
+    /// event, the manual Refresh button — parks forever on the dead
+    /// task. The whole widget freezes until the app is relaunched
+    /// (symptom: "Updated N min ago" stuck for hours on a long
+    /// uptime). This deadline guarantees `refresh()` always returns,
+    /// so the scheduler's retry layer can actually do its job.
+    /// 20 s = 2× URLSession's own limit, so a well-behaved timeout
+    /// still wins the race and yields its more specific error first.
+    private let fetchHardTimeout: TimeInterval
 
     private var inflight: Task<IPDataModel, Error>?
     private var lastSuccessAt: Date?
@@ -18,9 +35,10 @@ actor IPService {
     /// just re-verified.
     private let cacheRefreshInterval: TimeInterval = 300
 
-    init(provider: IPProvider, cache: IPCache) {
+    init(provider: IPProvider, cache: IPCache, fetchHardTimeout: TimeInterval = 20) {
         self.provider = provider
         self.cache = cache
+        self.fetchHardTimeout = fetchHardTimeout
         if let cached = cache.load() {
             self.currentState = .loaded(cached.model, fetchedAt: cached.fetchedAt)
         } else {
@@ -122,8 +140,11 @@ actor IPService {
         // for ~45 s — noisy when the user is on a network that can't reach
         // the upstream provider. If the first try fails, we just drop into
         // `.error` and wait for the next scheduler/network-event trigger.
+        let deadline = fetchHardTimeout
         let task = Task<IPDataModel, Error> { [provider] in
-            try await provider.fetch()
+            try await Self.withHardTimeout(seconds: deadline) {
+                try await provider.fetch()
+            }
         }
         inflight = task
 
@@ -155,6 +176,34 @@ actor IPService {
         currentState = state
         for continuation in continuations.values {
             continuation.yield(state)
+        }
+    }
+
+    /// Race `operation` against a wall-clock deadline. Whichever
+    /// finishes first wins; the loser is cancelled. If the deadline
+    /// wins, the operation task is cancelled — `URLSession.data(for:)`
+    /// is cancellation-aware, so the wedged request unwinds and the
+    /// provider's per-fetch session is torn down by its `defer` —
+    /// and `IPServiceError.timeout` is thrown so `refresh()`'s
+    /// `catch` emits `.error(.timeout)` and the scheduler retries on
+    /// its next tick. This is the safety net that makes "single
+    /// attempt, scheduler is the retry layer" actually hold even
+    /// when URLSession ignores its own timeout.
+    private static func withHardTimeout<T: Sendable>(
+        seconds: TimeInterval,
+        _ operation: @escaping @Sendable () async throws -> T
+    ) async throws -> T {
+        try await withThrowingTaskGroup(of: T.self) { group in
+            group.addTask { try await operation() }
+            group.addTask {
+                try await Task.sleep(for: .seconds(seconds))
+                throw IPServiceError.timeout
+            }
+            // Cancel the loser on both the success and the throw
+            // path (throwing out of the group body also cancels
+            // remaining children, but being explicit is clearer).
+            defer { group.cancelAll() }
+            return try await group.next()!
         }
     }
 }
