@@ -91,7 +91,11 @@ struct IPWhoIsProvider: IPProvider {
 
         let (data, response): (Data, URLResponse)
         do {
-            (data, response) = try await session.data(for: request)
+            // `safeData(for:)` — NSException barrier, see v0.32.1
+            // (URLSession+Safe.swift). The system `data(for:)` can
+            // SIGABRT from `taskForClassInfo:` on certain proxy/utun
+            // states; `safeData` converts that to a Swift error.
+            (data, response) = try await session.safeData(for: request)
         } catch {
             throw IPServiceError.from(error)
         }

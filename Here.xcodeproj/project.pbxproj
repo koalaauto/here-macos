@@ -77,6 +77,9 @@
 		AA0000000000000030000083 /* UpdateCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000083 /* UpdateCheckerTests.swift */; };
 		AA0000000000000030000084 /* UpdateInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000084 /* UpdateInstaller.swift */; };
 		AA0000000000000030000085 /* UpdateProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000085 /* UpdateProgressView.swift */; };
+		AA0000000000000030000091 /* HereURLSessionSafe.m in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000091 /* HereURLSessionSafe.m */; };
+		AA0000000000000030000092 /* URLSession+Safe.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000092 /* URLSession+Safe.swift */; };
+		AA0000000000000030000094 /* URLSessionSafeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000020000094 /* URLSessionSafeTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -152,6 +155,11 @@
 		AA0000000000000020000083 /* UpdateCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckerTests.swift; sourceTree = "<group>"; };
 		AA0000000000000020000084 /* UpdateInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateInstaller.swift; sourceTree = "<group>"; };
 		AA0000000000000020000085 /* UpdateProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateProgressView.swift; sourceTree = "<group>"; };
+		AA0000000000000020000090 /* HereURLSessionSafe.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HereURLSessionSafe.h; sourceTree = "<group>"; };
+		AA0000000000000020000091 /* HereURLSessionSafe.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HereURLSessionSafe.m; sourceTree = "<group>"; };
+		AA0000000000000020000092 /* URLSession+Safe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URLSession+Safe.swift"; sourceTree = "<group>"; };
+		AA0000000000000020000093 /* Here-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Here-Bridging-Header.h"; sourceTree = "<group>"; };
+		AA0000000000000020000094 /* URLSessionSafeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLSessionSafeTests.swift; sourceTree = "<group>"; };
 		AA0000000000000020000050 /* Here.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Here.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000000000000020000051 /* HereTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HereTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -206,6 +214,7 @@
 				AA000000000000001000010C /* Logging */,
 				AA000000000000001000010E /* Resources */,
 				AA0000000000000020000031 /* Here.entitlements */,
+				AA0000000000000020000093 /* Here-Bridging-Header.h */,
 			);
 			path = Here;
 			sourceTree = "<group>";
@@ -243,6 +252,9 @@
 				AA000000000000002000004B /* IPHistoryService.swift */,
 				AA000000000000002000004D /* ThroughputService.swift */,
 				AA0000000000000020000081 /* UpdateChecker.swift */,
+				AA0000000000000020000090 /* HereURLSessionSafe.h */,
+				AA0000000000000020000091 /* HereURLSessionSafe.m */,
+				AA0000000000000020000092 /* URLSession+Safe.swift */,
 			);
 			path = Networking;
 			sourceTree = "<group>";
@@ -385,6 +397,7 @@
 				AA0000000000000020000045 /* StatusBarTitleRendererTests.swift */,
 				AA0000000000000020000046 /* IPCacheTests.swift */,
 				AA0000000000000020000083 /* UpdateCheckerTests.swift */,
+				AA0000000000000020000094 /* URLSessionSafeTests.swift */,
 			);
 			path = HereTests;
 			sourceTree = "<group>";
@@ -567,6 +580,8 @@
 				AA0000000000000030000082 /* UpdateCoordinator.swift in Sources */,
 				AA0000000000000030000084 /* UpdateInstaller.swift in Sources */,
 				AA0000000000000030000085 /* UpdateProgressView.swift in Sources */,
+				AA0000000000000030000091 /* HereURLSessionSafe.m in Sources */,
+				AA0000000000000030000092 /* URLSession+Safe.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -583,6 +598,7 @@
 				AA0000000000000030000045 /* StatusBarTitleRendererTests.swift in Sources */,
 				AA0000000000000030000046 /* IPCacheTests.swift in Sources */,
 				AA0000000000000030000083 /* UpdateCheckerTests.swift in Sources */,
+				AA0000000000000030000094 /* URLSessionSafeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -754,6 +770,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = app.here-macos;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Here/Here-Bridging-Header.h";
 			};
 			name = Debug;
 		};
@@ -780,6 +797,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = app.here-macos;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Here/Here-Bridging-Header.h";
 			};
 			name = Release;
 		};

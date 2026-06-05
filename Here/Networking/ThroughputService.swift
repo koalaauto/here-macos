@@ -260,7 +260,19 @@ private final class SpeedProbe: NSObject, URLSessionDataDelegate, @unchecked Sen
     }
 
     func run(request: URLRequest) {
-        let task = session.dataTask(with: request)
+        // `safeDataTask(with:)` — the synchronous `session.dataTask(with:)`
+        // can throw an Obj-C `NSException` from `taskForClassInfo:` under
+        // certain proxy/utun states. With our delegate-driven design that
+        // exception would never reach a `catch` (the call is on the actor
+        // path before any await), so it would crash the whole app instead
+        // of just failing this probe. v0.32.1 — see URLSession+Safe.swift.
+        let task: URLSessionDataTask
+        do {
+            task = try session.safeDataTask(with: request)
+        } catch {
+            onComplete(.failure(error))
+            return
+        }
         task.resume()
     }
 

@@ -96,7 +96,11 @@ actor UpdateChecker {
 
         let (data, response): (Data, URLResponse)
         do {
-            (data, response) = try await session.data(for: request)
+            // `safeData(for:)` — NSException barrier, see v0.32.1
+            // (URLSession+Safe.swift). Otherwise an exception from
+            // `taskForClassInfo:` would crash the app inside the
+            // daily update-check timer instead of failing the check.
+            (data, response) = try await session.safeData(for: request)
         } catch {
             throw UpdateCheckError.from(error)
         }

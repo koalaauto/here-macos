@@ -105,7 +105,11 @@ actor LatencyService {
         request.httpMethod = "HEAD"
         let start = Date()
         do {
-            _ = try await session.data(for: request)
+            // `safeData(for:)` not `data(for:)`: the system API can throw an
+            // Obj-C `NSException` from `taskForClassInfo:` that Swift's
+            // `catch` cannot see, killing the app with SIGABRT. Fixed in
+            // v0.32.1 — see `URLSession+Safe.swift`.
+            _ = try await session.safeData(for: request)
             let elapsed = Date().timeIntervalSince(start) * 1000
             append(LatencySample(latencyMs: elapsed))
         } catch {
