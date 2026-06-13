@@ -5,16 +5,16 @@
 A tiny macOS menu bar app that answers that question, always. Flip a VPN, hop WiFi, toggle Clash — **Here** tells you at a glance where your traffic actually leaves from.
 
 <p align="center">
-  <em>🇺🇸 CA&nbsp;&nbsp;·&nbsp;&nbsp;38.175.104.131&nbsp;&nbsp;·&nbsp;&nbsp;San Jose, United States</em>
+  <img src="docs/screenshots/popover.png" alt="Here popover — flag, IP, map, history, latency, throughput" width="320">
 </p>
 
-## The pill
+## What you see
 
-A rounded pill in your menu bar: flag + region code. Border goes **red** the moment the latency probe says the network's actually broken. When the egress can't be verified (airplane mode, IP service unreachable), the pill flips to a **random flag + `OO`** — an honest "I don't know" instead of a stale lie.
+**The pill** lives in your menu bar: flag + region code (🇺🇸 LA, 🇯🇵 TYO, 🇹🇼 TPE…). Border turns **red** the moment the latency probe says the network's actually broken. When egress can't be verified (airplane mode, IP service unreachable), the pill flips to a **random flag + `OO`** — an honest "I don't know" instead of a stale lie.
 
-Click for the popover:
+**Click the pill** for the popover above:
 
-- **Location** — big copyable IP, mini Maps preview, ASN details.
+- **Location** — big copyable IP, mini Maps preview, ASN + ISP, local time.
 - **History** — recent egress changes as a flag chain with "time ago" labels.
 - **Latency** — rolling 30-probe bar, color-coded green / yellow / orange / red.
 - **Throughput** — on-demand download speed test (Cachefly / Cloudflare / custom URL).
