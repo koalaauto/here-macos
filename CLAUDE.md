@@ -1,8 +1,8 @@
 # Here — AI Assistant Notes
 
-Long-term menu bar macOS app showing your current egress country/region. Default IP-lookup provider: **ipwho.is** (since v0.26.0; previously ip.guide v0.23.x–v0.25.x). The lookup layer is provider-pluggable — see `Here/Networking/IPProvider.swift`.
+Long-term menu bar macOS app showing your current egress country/region. **Two-provider failover chain since v0.33.0**: primary is **ipwho.is**, fallback is **ip.guide** (see `Here/Networking/FallbackChainProvider.swift`). Sequential, not racing — fallback only runs when the primary throws. The chain exists because a single hardcoded provider was a single point of failure when a user's VPN / proxy rules broke that one CDN (the v0.32.x → v0.33.0 motivation).
 
-(Originally shipped as "IP Guide" through v0.23.x; renamed to **Here** at v0.24.0. Default provider switched to ipwho.is at v0.26.0 because ip.guide silently misreported VPN egresses — Korean nodes shown as Cyprus, etc.)
+(Originally shipped as "IP Guide" through v0.23.x; renamed to **Here** at v0.24.0. Default provider switched to ipwho.is at v0.26.0 because ip.guide silently misreported VPN egresses. Failover chain added at v0.33.0; ip.guide came back as the fallback after field testing showed its accuracy on VPN egresses had improved.)
 
 ## Architecture at a glance
 
@@ -10,7 +10,7 @@ Long-term menu bar macOS app showing your current egress country/region. Default
 - `AppDelegate` builds `AppEnvironment` + `StatusBarController`
 - `StatusBarController` owns `NSStatusItem` + `NSPopover` (AppKit-managed)
 - Popover content rendered with SwiftUI via `NSHostingController`
-- All IP-lookup networking flows through `IPService` (actor) → an `IPProvider` (`IPWhoIsProvider` is the default); emits `IPState` via `AsyncStream`. Each provider owns its own raw-response shape and a `map(_:)` adapter into the shared `IPDataModel` — swapping providers is mechanical, not a UI / cache rewrite.
+- All IP-lookup networking flows through `IPService` (actor) → an `IPProvider`. In production the provider is a `FallbackChainProvider([IPWhoIsProvider(), IPGuideProvider()])` wired up in `AppEnvironment`. Emits `IPState` via `AsyncStream`. Each provider owns its own raw-response shape and a `map(_:)` adapter into the shared `IPDataModel` — swapping providers is mechanical, not a UI / cache rewrite. The chain wrapper itself conforms to `IPProvider`, so `IPService` knows nothing about failover — it just sees "one provider".
 - `RefreshScheduler` runs the IP refresh loop on a hardcoded 5 s cadence (30 s while the display is asleep). `NetworkMonitor` (`NWPathMonitor`) fires extra immediate refreshes on `becameReachable` / `pathChanged`; lid-wake does the same. The polling loop is the safety net for everything else — at 5 s, you don't need a custom `SCDynamicStore` observer to catch WiFi hops or proxy toggles.
 - `UpdateChecker` (actor) + `UpdateInstaller` (actor) + `UpdateCoordinator` (@MainActor) handle the auto-update pipeline.
   - **Checker**: hits GitHub `releases/latest`, returns `UpdateInfo` (version + release URL + DMG asset URL).
@@ -51,7 +51,7 @@ Install full Xcode from the Mac App Store or developer.apple.com. `xcode-select 
 - `SMAppService.mainApp.register()` works from any signed bundle path on macOS 13+, including Debug builds running from DerivedData. Earlier-era "must live in /Applications" guidance is no longer accurate; don't re-add that gate. Surface registration errors inline only when `register()` actually throws.
 - IP providers don't ship ISO 3166-2 region codes. `RegionMapper` uses `CLGeocoder` with a city-initials fallback. See `Services/RegionMapper.swift` for the ordering.
 - Flag emoji for Taiwan (TW) may render as "TW" text on some system configurations — offer text fallback via `CountryStyle.text`.
-- `IPDataModel.countryAlpha2` is a **stored** field, populated by each provider's `map(_:)` adapter. `IPWhoIsProvider` reads `country_code` directly from the wire payload — there's no English-name lookup in the model layer anymore. (We *did* have a `CountryNameMapper` for the ip.guide era; deleted in v0.26.0 along with `IPGuideProvider`.) When adding a future provider, the rule is: provider returns alpha-2; don't push name-lookup logic into the model.
+- `IPDataModel.countryAlpha2` is a **stored** field, populated by each provider's `map(_:)` adapter. `IPWhoIsProvider` reads `country_code` directly from the wire payload — no lookup needed. `IPGuideProvider` does the **reverse** (English name → alpha-2) via `alpha2(forCountryName:)`: a two-stage lookup that tries Apple's `Locale.Region.isoRegions` first and falls back to a small drift dictionary for ISO long-form spellings Apple short-forms (`"Republic of Korea"` → KR, `"Czech Republic"` → CZ, etc.). When that lookup fails, the provider throws `.decoding` so the chain moves on rather than emitting a flagless model — this is the principled replacement for the v0.23–v0.25 era's `CountryNameMapper` (a static dict that drifted and silently failed). Do **not** fall back to ASN-registered country for the flag; the gotcha below explains why.
 - Never "fall back" to ASN-registered country for the flag — VPN ASNs routinely register in a different country than their actual egress (NL-registered AS serving KR users, HK-registered AS serving TW users). Use `location` data from the provider; if the provider lies, switch providers.
 - `CLGeocoder` is rate-limited by Apple; always rely on `RegionMapper`'s in-actor cache before issuing a new request.
 - `IPService` does **not** retry internally (single attempt per `refresh()` call). The scheduler is the retry layer — via periodic timer + network events. Don't re-add exponential backoff inside IPService; a failed fetch for an unreachable upstream would hammer the host for ~45 s.
@@ -63,7 +63,7 @@ Install full Xcode from the Mac App Store or developer.apple.com. `xcode-select 
 
 ## Where things live
 
-- New IP provider → implement `IPProvider` (in `Networking/IPProvider.swift`), register in `AppEnvironment`.
+- New IP provider → implement `IPProvider` (in `Networking/IPProvider.swift`), add it to the `FallbackChainProvider([...])` list in `AppEnvironment` at the appropriate priority. Mirror the existing providers' file shape: raw `Decodable` struct private to the provider + static `map(_:)` returning `IPDataModel`. If the provider ships English country names instead of alpha-2, see `IPGuideProvider.alpha2(forCountryName:)` for the Locale + drift-dict pattern. Add fixtures + a `*ProviderTests.swift` with its **own** `URLProtocol` subclass (don't share `URLProtocolMock` — see the suites-run-in-parallel gotcha above).
 - Change display formats → `StatusBar/StatusBarTitleRenderer.swift` + `Models/DisplayStyle.swift`.
 - Tweak popover UI → `UI/Popover/`; settings UI → `UI/Settings/`.
 - Add a metric to the popover → extend `IPDataModel` (may need derived property), add a `CopyableRow` in the appropriate card.
@@ -83,7 +83,7 @@ Install full Xcode from the Mac App Store or developer.apple.com. `xcode-select 
 
 - IPv6 dual stack
 - Swift Charts sparkline for latency history
-- Multiple IP providers with failover (architecture is in place — `IPProvider` protocol with `map(_:)` adapters; just need a Settings picker + voting/fallback logic in `IPService`)
+- Concurrent-race mode for `FallbackChainProvider` as an opt-in (currently sequential — see file header for the trade-off). Would shave the worst-case latency on broken-primary networks at the cost of 2× request volume; a Settings toggle could give power users the choice.
 - App Intents / Shortcuts integration
 - Chinese localization (scaffolding is ready; only translation pending)
 - Once a Developer ID lands: optionally migrate the in-app installer to Sparkle for ed25519-signed update feeds + delta updates. Today's `UpdateInstaller` already gives a one-click silent upgrade (URLSession download skips the quarantine xattr, so no Gatekeeper prompt) — Sparkle would mostly add provenance verification.
@@ -118,5 +118,6 @@ Release body template:
 
 ## Reference
 
-- Default provider: `GET https://ipwho.is/` — free, no auth, ~1 req/s per client IP. Returns `{ ip, success, country, country_code, city, latitude, longitude, connection: { asn, org, isp, domain }, timezone: { id, ... }, ... }`. On invalid input or rate-limit, returns HTTP 200 with `{"success": false, "message": "..."}` — `IPWhoIsProvider` translates that into `IPServiceError.transport`.
-- The legacy ip.guide schema is preserved in git history if you need to compare; don't re-add it without a strong reason — it was unreliable for VPN egress IPs.
+- Primary provider: `GET https://ipwho.is/` — free, no auth, ~1 req/s per client IP. Returns `{ ip, success, country, country_code, city, latitude, longitude, connection: { asn, org, isp, domain }, timezone: { id, ... }, ... }`. On invalid input or rate-limit, returns HTTP 200 with `{"success": false, "message": "..."}` — `IPWhoIsProvider` translates that into `IPServiceError.transport`.
+- Fallback provider: `GET https://ip.guide/` — free, no auth. Returns `{ ip, network: { cidr, autonomous_system: { asn, name, organization, country, rir } }, location: { city, country, timezone, latitude, longitude } }`. Two important things: `location.country` is an **English country name** (not alpha-2 — reverse-lookup via `IPGuideProvider.alpha2(forCountryName:)`), and `network.autonomous_system.country` is the ASN's RIR registration (NOT the egress; never use it for the flag). Bonus over ipwho.is: ships CIDR + RIR + ASN-country (`ipwho.is` omits all three).
+- ipinfo.io was evaluated as the fallback during v0.33.0 development and rejected: it routed differently through Clash setups than ipwho.is and reported wrong egress countries in field testing. Don't re-introduce it without first confirming that routing equivalence has improved.

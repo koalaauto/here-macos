@@ -3,8 +3,8 @@ import Testing
 
 @testable import Here
 
-/// Suite-private URLProtocol so we don't fight `IPWhoIsProviderTests`
-/// over `URLProtocolMock`'s class-static handler. Both suites are
+/// Suite-private URLProtocol so we don't fight other suites over
+/// `URLProtocolMock`'s class-static handler. Both suites are
 /// `.serialized` internally, but Swift Testing runs different suites
 /// in parallel — and a class-static handler is a single global slot.
 /// The race surfaced as "test A's HTTP 503 handler swallows test B's
@@ -94,109 +94,107 @@ struct UpdateCheckerTests {
         #expect(UpdateChecker.normalize(tag: "0.30.0") == "0.30.0")
     }
 
-    // MARK: - End-to-end via URLProtocolMock
+    /// Prerelease suffix recognition. Atom feeds don't distinguish
+    /// prereleases from final releases the way the JSON API did, so
+    /// we filter by tag-name suffix. Cover the common suffixes plus
+    /// confirm the normal case is not a false positive.
+    @Test func recognisesPrereleaseTags() {
+        #expect(UpdateChecker.isPrereleaseTag("0.30.0-beta") == true)
+        #expect(UpdateChecker.isPrereleaseTag("0.30.0-rc1") == true)
+        #expect(UpdateChecker.isPrereleaseTag("0.30.0-alpha2") == true)
+        #expect(UpdateChecker.isPrereleaseTag("0.30.0-pre") == true)
+        #expect(UpdateChecker.isPrereleaseTag("0.30.0") == false)
+        #expect(UpdateChecker.isPrereleaseTag("1.0.0") == false)
+    }
+
+    // MARK: - End-to-end via URLProtocol + atom XML
 
     private func mockedChecker(currentVersion: String) -> UpdateChecker {
         UpdateChecker(
             currentVersion: currentVersion,
-            endpoint: URL(string: "https://mock.api.github.com/releases/latest")!,
+            feedURL: URL(string: "https://mock.github.com/releases.atom")!,
+            downloadURLBase: URL(string: "https://mock.github.com/releases/download")!,
             sessionFactory: { UpdateMockURLProtocol.session() }
         )
     }
 
     private func httpResponse(_ status: Int = 200) -> HTTPURLResponse {
         HTTPURLResponse(
-            url: URL(string: "https://mock.api.github.com/releases/latest")!,
+            url: URL(string: "https://mock.github.com/releases.atom")!,
             statusCode: status,
             httpVersion: "HTTP/1.1",
-            headerFields: ["Content-Type": "application/json"]
+            headerFields: ["Content-Type": "application/atom+xml"]
         )!
     }
 
-    private func releaseJSON(
-        tag: String = "v0.30.0",
-        name: String? = "v0.30.0",
-        draft: Bool = false,
-        prerelease: Bool = false,
-        body: String = "## Changes\n- Auto update support",
-        includeDMGAsset: Bool = true
-    ) -> Data {
-        // Hand-build the JSON to avoid pulling in a proper encoder
-        // — the wire shape is small and we want to test the decoder
-        // against literal GitHub-like bytes.
-        let nameField: String
-        if let name {
-            nameField = "\"\(name)\""
-        } else {
-            nameField = "null"
-        }
-        let strippedTag = tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
-        let assets: String = includeDMGAsset ? """
-        ,
-          "assets": [
-            {
-              "name": "Here-\(strippedTag).dmg",
-              "browser_download_url": "https://github.com/bikekoala/here-macos/releases/download/\(tag)/Here-\(strippedTag).dmg",
-              "size": 3000000
-            }
-          ]
-        """ : ""
-        let json = """
-        {
-          "tag_name": "\(tag)",
-          "name": \(nameField),
-          "html_url": "https://github.com/bikekoala/here-macos/releases/tag/\(tag)",
-          "body": \(escape(body)),
-          "published_at": "2026-04-30T12:00:00Z",
-          "draft": \(draft),
-          "prerelease": \(prerelease)\(assets)
-        }
+    /// Build an atom feed body containing the provided entries
+    /// (newest-first, mirroring GitHub's natural ordering). Tags get
+    /// rendered with the `v` prefix because that's how GitHub
+    /// formats them in the real feed.
+    private func atomFeed(entries: [(tag: String, body: String)]) -> Data {
+        var xml = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xml:lang="en-US">
+          <id>tag:github.com,2008:https://github.com/koalaauto/here-macos/releases</id>
+          <link type="text/html" rel="alternate" href="https://github.com/koalaauto/here-macos/releases"/>
+          <title>Release notes from here-macos</title>
+          <updated>2026-06-23T03:31:06Z</updated>
         """
-        return Data(json.utf8)
+        for entry in entries {
+            let tagWithV = entry.tag.hasPrefix("v") ? entry.tag : "v\(entry.tag)"
+            // Mimic GitHub's HTML-escaped content. The parser keeps
+            // the escaped form verbatim, so tests assert on what the
+            // raw atom emits.
+            let escapedBody = entry.body
+                .replacingOccurrences(of: "&", with: "&amp;")
+                .replacingOccurrences(of: "<", with: "&lt;")
+                .replacingOccurrences(of: ">", with: "&gt;")
+            xml += """
+
+              <entry>
+                <id>tag:github.com,2008:Repository/0/\(tagWithV)</id>
+                <updated>2026-04-30T12:00:00Z</updated>
+                <link rel="alternate" type="text/html" href="https://github.com/koalaauto/here-macos/releases/tag/\(tagWithV)"/>
+                <title>\(tagWithV)</title>
+                <content type="html">\(escapedBody)</content>
+                <author><name>koalaauto</name></author>
+                <media:thumbnail height="30" width="30" url="https://example.com/avatar.png"/>
+              </entry>
+        """
+        }
+        xml += "\n</feed>\n"
+        return Data(xml.utf8)
     }
 
-    private func escape(_ s: String) -> String {
-        let escaped = s
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "\"", with: "\\\"")
-            .replacingOccurrences(of: "\n", with: "\\n")
-        return "\"\(escaped)\""
-    }
-
-    /// Happy path: GitHub returns a newer tag, current is older →
-    /// checker reports an `UpdateInfo` populated with both the
-    /// release page URL and the direct DMG asset URL.
+    /// Happy path: feed has a newer tag at the top, current is older
+    /// → checker reports an `UpdateInfo` populated with version,
+    /// release page URL, and synthesized DMG URL. The DMG URL is the
+    /// most fragile new piece — we synthesize it from the version
+    /// rather than read it out of the feed (atom doesn't list
+    /// assets) — so the test pins the convention explicitly.
     @Test func reportsUpdateAvailableWhenTagIsNewer() async throws {
-        UpdateMockURLProtocol.install { _ in (self.httpResponse(200), self.releaseJSON()) }
+        let feed = atomFeed(entries: [
+            (tag: "v0.30.0", body: "<h2>Changes</h2><ul><li>Auto update support</li></ul>")
+        ])
+        UpdateMockURLProtocol.install { _ in (self.httpResponse(200), feed) }
         defer { UpdateMockURLProtocol.clear() }
 
         let checker = mockedChecker(currentVersion: "0.29.3")
         let info = try await checker.checkForUpdate()
         #expect(info != nil)
         #expect(info?.latestVersion == "0.30.0")
-        #expect(info?.releaseURL.absoluteString.contains("0.30.0") == true)
-        #expect(info?.dmgURL?.absoluteString.hasSuffix("/Here-0.30.0.dmg") == true)
-    }
-
-    /// Releases without a DMG attached (legacy tags) → `dmgURL` is
-    /// `nil` and the in-app installer flow falls back to opening the
-    /// release page.
-    @Test func dmgURLIsNilWhenNoAsset() async throws {
-        UpdateMockURLProtocol.install { _ in
-            (self.httpResponse(200), self.releaseJSON(includeDMGAsset: false))
-        }
-        defer { UpdateMockURLProtocol.clear() }
-
-        let checker = mockedChecker(currentVersion: "0.29.3")
-        let info = try await checker.checkForUpdate()
-        #expect(info != nil)
-        #expect(info?.dmgURL == nil)
+        #expect(info?.releaseURL.absoluteString.hasSuffix("/releases/tag/v0.30.0") == true)
+        #expect(info?.dmgURL?.absoluteString == "https://mock.github.com/releases/download/v0.30.0/Here-0.30.0.dmg")
+        // Notes carry through with HTML; the coordinator's
+        // `summarize` strips it for the alert.
+        #expect(info?.releaseNotes.contains("Auto update support") == true)
     }
 
     /// Already on latest → nil. Important: the user shouldn't ever see
     /// a "0.30.0 is available" prompt while running 0.30.0.
     @Test func returnsNilWhenAlreadyOnLatest() async throws {
-        UpdateMockURLProtocol.install { _ in (self.httpResponse(200), self.releaseJSON(tag: "v0.30.0")) }
+        let feed = atomFeed(entries: [(tag: "v0.30.0", body: "")])
+        UpdateMockURLProtocol.install { _ in (self.httpResponse(200), feed) }
         defer { UpdateMockURLProtocol.clear() }
 
         let checker = mockedChecker(currentVersion: "0.30.0")
@@ -208,7 +206,8 @@ struct UpdateCheckerTests {
     /// time-traveller, whatever) → still nil. We never tell someone
     /// to "downgrade".
     @Test func returnsNilWhenAheadOfLatest() async throws {
-        UpdateMockURLProtocol.install { _ in (self.httpResponse(200), self.releaseJSON(tag: "v0.30.0")) }
+        let feed = atomFeed(entries: [(tag: "v0.30.0", body: "")])
+        UpdateMockURLProtocol.install { _ in (self.httpResponse(200), feed) }
         defer { UpdateMockURLProtocol.clear() }
 
         let checker = mockedChecker(currentVersion: "0.31.0")
@@ -216,26 +215,25 @@ struct UpdateCheckerTests {
         #expect(info == nil)
     }
 
-    /// Drafts shouldn't surface even if their tag sorts newer —
-    /// `releases/latest` already filters them server-side, but we
-    /// belt-and-braces.
-    @Test func ignoresDraftsAndPrereleases() async throws {
-        UpdateMockURLProtocol.install { _ in
-            (self.httpResponse(200), self.releaseJSON(tag: "v0.31.0", draft: true))
-        }
+    /// Prerelease at the top of the feed gets skipped; the next
+    /// final-release entry is what we compare against. This is the
+    /// only meaningful filtering we can do — atom feeds don't carry
+    /// a structured `prerelease` flag the way the JSON API did.
+    @Test func skipsPrereleaseEntries() async throws {
+        let feed = atomFeed(entries: [
+            (tag: "v0.31.0-beta", body: "<p>beta</p>"),
+            (tag: "v0.30.0", body: "<p>final</p>")
+        ])
+        UpdateMockURLProtocol.install { _ in (self.httpResponse(200), feed) }
         defer { UpdateMockURLProtocol.clear() }
 
-        let checker = mockedChecker(currentVersion: "0.30.0")
-        #expect(try await checker.checkForUpdate() == nil)
-
-        UpdateMockURLProtocol.install { _ in
-            (self.httpResponse(200), self.releaseJSON(tag: "v0.31.0", prerelease: true))
-        }
-        #expect(try await checker.checkForUpdate() == nil)
+        let checker = mockedChecker(currentVersion: "0.29.3")
+        let info = try await checker.checkForUpdate()
+        #expect(info?.latestVersion == "0.30.0")
     }
 
-    /// 5xx from GitHub → `.http(503)` so the coordinator can decide
-    /// whether to surface or swallow it.
+    /// 5xx from github.com → `.http(503)` so the coordinator can
+    /// decide whether to surface or swallow it.
     @Test func surfacesHTTPErrors() async throws {
         UpdateMockURLProtocol.install { _ in (self.httpResponse(503), Data()) }
         defer { UpdateMockURLProtocol.clear() }
@@ -266,10 +264,11 @@ struct UpdateCheckerTests {
         }
     }
 
-    /// Garbage body → `.decoding`, not a crash.
+    /// Garbage body → `.decoding`, not a crash. The atom feed parser
+    /// throws when the document isn't well-formed XML.
     @Test func surfacesDecodingFailureOnGarbage() async throws {
         UpdateMockURLProtocol.install { _ in
-            (self.httpResponse(200), Data("<html>not json</html>".utf8))
+            (self.httpResponse(200), Data("<<not valid xml>>".utf8))
         }
         defer { UpdateMockURLProtocol.clear() }
 
@@ -283,6 +282,18 @@ struct UpdateCheckerTests {
                 Issue.record("Expected .decoding, got \(error)")
             }
         }
+    }
+
+    /// Empty feed (no <entry> children) → nil, no crash. Defensive
+    /// in case GitHub ever serves an empty atom for a repo with no
+    /// releases yet — unlikely for us, but cheap to cover.
+    @Test func returnsNilForEmptyFeed() async throws {
+        let feed = atomFeed(entries: [])
+        UpdateMockURLProtocol.install { _ in (self.httpResponse(200), feed) }
+        defer { UpdateMockURLProtocol.clear() }
+
+        let info = try await mockedChecker(currentVersion: "0.29.3").checkForUpdate()
+        #expect(info == nil)
     }
 
     // MARK: - Coordinator helper

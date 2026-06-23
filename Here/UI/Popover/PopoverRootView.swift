@@ -142,7 +142,7 @@ struct PopoverRootView: View {
     @ViewBuilder
     private func errorView(_ error: IPServiceError) -> some View {
         ContentUnavailableView {
-            Label(String(localized: "Can't reach ipwho.is"), systemImage: "wifi.slash")
+            Label(String(localized: "Can't reach the IP lookup service"), systemImage: "wifi.slash")
         } description: {
             Text(error.userDescription)
         } actions: {

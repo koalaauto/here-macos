@@ -1,0 +1,24 @@
+{
+  "ip": "45.82.246.98",
+  "network": {
+    "cidr": "45.82.246.0/24",
+    "hosts": {
+      "start": "45.82.246.1",
+      "end": "45.82.246.254"
+    },
+    "autonomous_system": {
+      "asn": 209847,
+      "name": "WORKTITANS - Worktitans B.V.",
+      "organization": "Worktitans B.V.",
+      "country": "NL",
+      "rir": "RIPE NCC"
+    }
+  },
+  "location": {
+    "city": "Seoul",
+    "country": "Republic of Korea",
+    "timezone": "Asia/Seoul",
+    "latitude": 37.566535,
+    "longitude": 126.9779692
+  }
+}

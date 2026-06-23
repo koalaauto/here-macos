@@ -13,11 +13,16 @@ enum IPServiceError: Error, Sendable, Equatable {
         case .offline:
             String(localized: "No network connection.")
         case .timeout:
-            String(localized: "The request to ipwho.is timed out.")
+            // Generic "IP lookup" rather than naming a specific provider:
+            // since v0.33.0 the request flows through a fallback chain
+            // (FallbackChainProvider), so the originating timeout could
+            // be from either ipwho.is or ip.guide — naming one in the
+            // user-facing message would be wrong half the time.
+            String(localized: "The IP lookup request timed out.")
         case .http(let code):
-            String(localized: "ipwho.is returned an error (\(code)).")
+            String(localized: "The IP lookup service returned an error (\(code)).")
         case .decoding:
-            String(localized: "Got an unexpected response from ipwho.is.")
+            String(localized: "Got an unexpected response from the IP lookup service.")
         case .transport(let msg):
             // No trailing period — `URLError.localizedDescription`
             // already ends in "." so appending another produces

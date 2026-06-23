@@ -101,14 +101,14 @@
 "Loading…" = "Loading…";
 "Updated %@" = "Updated %@";
 "Data may be out of date" = "Data may be out of date";
-"Can't reach ipwho.is" = "Can't reach ipwho.is";
+"Can't reach the IP lookup service" = "Can't reach the IP lookup service";
 "Try again" = "Try again";
 
 /* IPService error messages */
 "No network connection." = "No network connection.";
-"The request to ipwho.is timed out." = "The request to ipwho.is timed out.";
-"ipwho.is returned an error (%d)." = "ipwho.is returned an error (%d).";
-"Got an unexpected response from ipwho.is." = "Got an unexpected response from ipwho.is.";
+"The IP lookup request timed out." = "The IP lookup request timed out.";
+"The IP lookup service returned an error (%d)." = "The IP lookup service returned an error (%d).";
+"Got an unexpected response from the IP lookup service." = "Got an unexpected response from the IP lookup service.";
 "Network error: %@" = "Network error: %@";
 "Request cancelled." = "Request cancelled.";
 
@@ -145,7 +145,7 @@
 
 /* Update checker errors */
 "The update check timed out." = "The update check timed out.";
-"Couldn't reach GitHub: %@" = "Couldn't reach GitHub: %@";
-"GitHub returned an error (%d)." = "GitHub returned an error (%d).";
-"Couldn't read GitHub's response." = "Couldn't read GitHub's response.";
+"Couldn't reach the update server: %@" = "Couldn't reach the update server: %@";
+"The update server returned an error (%d)." = "The update server returned an error (%d).";
+"Couldn't read the update server's response." = "Couldn't read the update server's response.";
 "Update check cancelled." = "Update check cancelled.";

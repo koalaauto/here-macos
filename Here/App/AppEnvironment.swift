@@ -34,7 +34,18 @@ final class AppEnvironment {
         let networkMonitor = NetworkMonitor()
         let sleepWakeObserver = SleepWakeObserver()
         let regionMapper = RegionMapper()
-        let ipService = IPService(provider: IPWhoIsProvider(), cache: cache)
+        // Two-provider failover chain (v0.33.0+). Primary is ipwho.is —
+        // historically reliable and accurate for VPN egress IPs. Fallback
+        // is ip.guide on independent infrastructure so a proxy / VPN
+        // rule that breaks one CDN doesn't silently freeze the widget.
+        // See IPGuideProvider.swift's header for why ip.guide is back
+        // after being removed in v0.26.0, and FallbackChainProvider.swift
+        // for why the chain is sequential rather than racing.
+        let provider = FallbackChainProvider([
+            IPWhoIsProvider(),
+            IPGuideProvider()
+        ])
+        let ipService = IPService(provider: provider, cache: cache)
         let latencyService = LatencyService(
             capacity: settings.latencySlotCount,
             target: settings.latencyTargetURL

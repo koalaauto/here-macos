@@ -414,6 +414,15 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     /// stop probing — the last bucket from the previous target is now
     /// stale, so suppress the alert until probes resume.
     private func currentBorderTint() -> StatusBarTitleRenderer.BorderTint {
+        // `.error` with a usable cached model: flip to alert so the
+        // dashed border tells the user "this country is from the
+        // cache, the current fetch failed". Without this, a stale
+        // reading would look identical to a fresh one. Added v0.33.0
+        // alongside the change to render cached country on error
+        // instead of the OO placeholder.
+        if case .error(_, let cached, _) = latestState, cached != nil {
+            return .alert
+        }
         guard environment.settings.latencyEnabled,
               environment.settings.widgetLatencyAlert,
               environment.settings.latencyTargetURL != nil,
@@ -440,10 +449,17 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         //   that emits `.loading` now (auto refresh is silent),
         //   so this branch only fires while the user is actively
         //   watching the popover anyway.
-        // - `.error(cached: m)`: random flag. The most recent
-        //   fetch failed; the cached `m` may or may not still
-        //   be true, and we'd rather flag the uncertainty loudly
-        //   than silently keep asserting stale info.
+        // - `.error(cached: m)` **with** a cache: keep showing `m`'s
+        //   flag — paired with a dashed border (see
+        //   `currentBorderTint()`) so the user can distinguish "fresh
+        //   reading: HK" from "last known: HK, we couldn't re-verify
+        //   this poll". Changed v0.33.0 from "always random on error";
+        //   the failover chain (v0.33.0) means a single failed fetch
+        //   is now usually the user's VPN flicking off the primary
+        //   AND the fallback for a few seconds, not a real egress
+        //   change — silently rolling to a random country every 5 s
+        //   of flake was misleading. The dashed border signal alone
+        //   carries the "stale" meaning.
         // - `.idle`, `.loading(cached: nil)`, `.error(cached: nil)`:
         //   no data we can stand behind → random.
         let renderModel: IPDataModel?
@@ -452,7 +468,9 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             renderModel = m
         case .loading(let cached):
             renderModel = cached
-        case .error, .idle:
+        case .error(_, let cached, _):
+            renderModel = cached
+        case .idle:
             renderModel = nil
         }
 
