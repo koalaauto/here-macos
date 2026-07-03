@@ -270,6 +270,11 @@ private final class SpeedProbe: NSObject, URLSessionDataDelegate, @unchecked Sen
         do {
             task = try session.safeDataTask(with: request)
         } catch {
+            // Tear down the session we just built: nothing will call
+            // didCompleteWithError to invalidate it on this early-return
+            // path, and the session strongly retains us as its delegate,
+            // so skipping it leaks both the session and this probe.
+            session.finishTasksAndInvalidate()
             onComplete(.failure(error))
             return
         }

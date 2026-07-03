@@ -3,17 +3,6 @@ import ServiceManagement
 
 @MainActor
 final class LaunchAtLoginService {
-    enum Availability: Sendable, Equatable {
-        case available
-        case requiresApplicationsFolder
-    }
-
-    var availability: Availability {
-        Bundle.main.bundleURL.path.hasPrefix("/Applications/")
-            ? .available
-            : .requiresApplicationsFolder
-    }
-
     var isEnabled: Bool {
         SMAppService.mainApp.status == .enabled
     }

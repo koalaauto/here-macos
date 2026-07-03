@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 extension Notification.Name {
-    static let ipGuidePopoverCloseRequested = Notification.Name("app.here-macos.popover.closeRequested")
+    static let popoverCloseRequested = Notification.Name("app.here-macos.popover.closeRequested")
 }
 
 @MainActor
@@ -27,6 +27,11 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     /// all renders while in unknown, cleared on return to `.loaded` so
     /// the next unknown state rolls a fresh random flag.
     private var currentUnknownFlag: String?
+    /// Last `Input` actually drawn into the button. Guards `apply(_:to:)`
+    /// so repeated renders with identical inputs skip the CoreImage work.
+    /// Reset to `nil` on appearance changes (the label colours are baked
+    /// into the produced NSImage, so a theme flip must force a repaint).
+    private var lastRenderedInput: StatusBarTitleRenderer.Input?
 
     /// Invisible borderless window placed at the menu-bar widget's
     /// screen frame at popover-open time, used as NSPopover's
@@ -66,7 +71,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
     private func observeCloseRequests() {
         closeRequestObserver = NotificationCenter.default.addObserver(
-            forName: .ipGuidePopoverCloseRequested,
+            forName: .popoverCloseRequested,
             object: nil,
             queue: .main
         ) { [weak self] _ in
@@ -280,6 +285,12 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             guard let self else { return }
             self.popoverOpen = false
             self.removeDismissMonitors()
+            // Reclaim the invisible anchor window on close paths that
+            // don't route through `closePopover()` — e.g. Esc, or
+            // NSPopover dismissing itself. Otherwise a `.statusBar`-level
+            // hidden window lingers until the next open.
+            self.anchorWindow?.orderOut(nil)
+            self.anchorWindow = nil
             self.render()
         }
     }
@@ -382,7 +393,12 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.render() }
+            Task { @MainActor [weak self] in
+                // Label colours are baked into the produced NSImage, so a
+                // theme flip must bypass the `apply` dedup and repaint.
+                self?.lastRenderedInput = nil
+                self?.render()
+            }
         }
     }
 
@@ -404,11 +420,11 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         )
     }
 
-    /// Border tint for the pill. Binary: neutral most of the time, red
-    /// only when the most recent latency probe landed in `.poor`
+    /// Border tint for the pill. Binary: neutral most of the time,
+    /// dashed only when the most recent latency probe landed in `.poor`
     /// (timeout or > 600 ms — effectively "network isn't working"). The
-    /// healthy tiers intentionally don't colour the border; an
-    /// always-coloured pill is too noisy in the menu bar.
+    /// healthy tiers intentionally don't change the outline; an
+    /// always-alerting pill is too noisy in the menu bar.
     ///
     /// When the user picks `.custom` but leaves the URL blank/invalid we
     /// stop probing — the last bucket from the previous target is now
@@ -435,33 +451,38 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
     private func render() {
         guard let button = statusItem.button else { return }
-        let settings = environment.settings
+        apply(makeRenderInput(), to: button)
+    }
 
-        // Decide which model (if any) drives the rendered flag.
-        //
-        // - `.loaded`: real flag, real region.
-        // - `.loading(cached: m)` with a cache: keep showing `m`'s
-        //   flag. A loading state is "we're re-checking" — most
-        //   re-checks succeed and the answer is unchanged, so
-        //   strobing the widget to a random placeholder every
-        //   refresh would produce constant visual noise. The
-        //   manual-refresh path in `IPService` is the only one
-        //   that emits `.loading` now (auto refresh is silent),
-        //   so this branch only fires while the user is actively
-        //   watching the popover anyway.
-        // - `.error(cached: m)` **with** a cache: keep showing `m`'s
-        //   flag — paired with a dashed border (see
-        //   `currentBorderTint()`) so the user can distinguish "fresh
-        //   reading: HK" from "last known: HK, we couldn't re-verify
-        //   this poll". Changed v0.33.0 from "always random on error";
-        //   the failover chain (v0.33.0) means a single failed fetch
-        //   is now usually the user's VPN flicking off the primary
-        //   AND the fallback for a few seconds, not a real egress
-        //   change — silently rolling to a random country every 5 s
-        //   of flake was misleading. The dashed border signal alone
-        //   carries the "stale" meaning.
-        // - `.idle`, `.loading(cached: nil)`, `.error(cached: nil)`:
-        //   no data we can stand behind → random.
+    /// Resolve the pill's render input from the current state.
+    ///
+    /// Decide which model (if any) drives the rendered flag.
+    ///
+    /// - `.loaded`: real flag, real region.
+    /// - `.loading(cached: m)` with a cache: keep showing `m`'s
+    ///   flag. A loading state is "we're re-checking" — most
+    ///   re-checks succeed and the answer is unchanged, so
+    ///   strobing the widget to a random placeholder every
+    ///   refresh would produce constant visual noise. The
+    ///   manual-refresh path in `IPService` is the only one
+    ///   that emits `.loading` now (auto refresh is silent),
+    ///   so this branch only fires while the user is actively
+    ///   watching the popover anyway.
+    /// - `.error(cached: m)` **with** a cache: keep showing `m`'s
+    ///   flag — paired with a dashed border (see
+    ///   `currentBorderTint()`) so the user can distinguish "fresh
+    ///   reading: HK" from "last known: HK, we couldn't re-verify
+    ///   this poll". Changed v0.33.0 from "always random on error";
+    ///   the failover chain (v0.33.0) means a single failed fetch
+    ///   is now usually the user's VPN flicking off the primary
+    ///   AND the fallback for a few seconds, not a real egress
+    ///   change — silently rolling to a random country every 5 s
+    ///   of flake was misleading. The dashed border signal alone
+    ///   carries the "stale" meaning.
+    /// - `.idle`, `.loading(cached: nil)`, `.error(cached: nil)`:
+    ///   no data we can stand behind → random.
+    private func makeRenderInput() -> StatusBarTitleRenderer.Input {
+        let settings = environment.settings
         let renderModel: IPDataModel?
         switch latestState {
         case .loaded(let m, _):
@@ -475,15 +496,14 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         }
 
         guard let model = renderModel else {
-            renderUnknown(on: button)
-            return
+            return makeUnknownInput()
         }
 
         // Back to a verified egress — drop the stashed random flag so
         // the next unknown cycle rolls a new one.
         currentUnknownFlag = nil
 
-        let input = StatusBarTitleRenderer.Input(
+        return StatusBarTitleRenderer.Input(
             countryAlpha2: model.countryAlpha2,
             regionCode: latestRegion,
             showMode: settings.showMode,
@@ -491,22 +511,9 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             borderTint: currentBorderTint(),
             flagMono: !popoverOpen
         )
-
-        if let image = StatusBarTitleRenderer.renderImage(input) {
-            button.image = image
-            button.attributedTitle = NSAttributedString(string: "")
-            button.imagePosition = .imageOnly
-        } else {
-            // Fallback: text-only rendering (shouldn't happen in practice)
-            button.image = nil
-            button.attributedTitle = NSAttributedString(
-                string: StatusBarTitleRenderer.plain(input),
-                attributes: [.font: NSFont.menuBarFont(ofSize: 0)]
-            )
-        }
     }
 
-    /// Render the "we don't know the current egress" state.
+    /// Render input for the "we don't know the current egress" state.
     ///
     /// Keeps the pill shape (flag + region code + user's border) so the
     /// widget doesn't visually jump to a different kind of element every
@@ -516,7 +523,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     /// data at a glance). Random flag keeps the pill feeling alive and
     /// makes state transitions visible — a collision with the previous
     /// country would otherwise look like nothing changed.
-    private func renderUnknown(on button: NSStatusBarButton) {
+    private func makeUnknownInput() -> StatusBarTitleRenderer.Input {
         let code: String
         if let stored = currentUnknownFlag {
             code = stored
@@ -526,7 +533,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             currentUnknownFlag = code
         }
 
-        let input = StatusBarTitleRenderer.Input(
+        return StatusBarTitleRenderer.Input(
             countryAlpha2: code,
             regionCode: "OO",
             showMode: .both,
@@ -534,11 +541,24 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             borderTint: currentBorderTint(),
             flagMono: !popoverOpen
         )
+    }
+
+    /// Draw `input` into the status-bar button, skipping the work when
+    /// nothing changed. `render()` runs on every IPService emit — which
+    /// at the 5 s poll cadence fires even when the egress is unchanged —
+    /// and each real render is a CoreImage round-trip (flag resize +
+    /// desaturate). Deduping on the fully-resolved `Input` collapses
+    /// those no-op repaints to a cheap struct compare.
+    private func apply(_ input: StatusBarTitleRenderer.Input, to button: NSStatusBarButton) {
+        if input == lastRenderedInput { return }
+        lastRenderedInput = input
+
         if let image = StatusBarTitleRenderer.renderImage(input) {
             button.image = image
             button.attributedTitle = NSAttributedString(string: "")
             button.imagePosition = .imageOnly
         } else {
+            // Fallback: text-only rendering (shouldn't happen in practice)
             button.image = nil
             button.attributedTitle = NSAttributedString(
                 string: StatusBarTitleRenderer.plain(input),

@@ -72,11 +72,11 @@ struct IPHeroView: View {
         .contentShape(Rectangle())
         .pointerStyle(.link)
         .onTapGesture {
-            if let url = URL(string: "https://ip-api.com/") {
+            if let url = URL(string: "https://ipwho.is/") {
                 openURL(url)
             }
         }
-        .help(String(localized: "Open ip-api.com in browser"))
+        .help(String(localized: "Open ipwho.is in browser"))
     }
 
     private func copyIP() {

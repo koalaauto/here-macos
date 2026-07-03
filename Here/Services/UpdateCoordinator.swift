@@ -248,30 +248,49 @@ final class UpdateCoordinator {
         alert.runModal()
     }
 
-    /// Tame markdown release notes for an `NSAlert.informativeText`.
-    /// The control doesn't render markdown — left untouched, raw `##`
-    /// headers and bullet syntax leak into the dialog. We strip the
-    /// noisy bits and cap at a screenful of text so the alert stays
+    /// Tame release notes for an `NSAlert.informativeText`. The control
+    /// renders neither HTML nor markdown, so raw tags and syntax leak
+    /// into the dialog if left untouched. Our notes arrive as **HTML**
+    /// (the atom feed's `<content type="html">` — `<h2>`, `<ul>`,
+    /// `<li>`, `<strong>`…, with entities already decoded by
+    /// `XMLParser`), so we strip HTML tags first, then the markdown
+    /// leaders that survive, drop empty lines, skip the install
+    /// boilerplate, and cap at a screenful so the alert stays
     /// dismissible.
-    static func summarize(notes: String, maxLines: Int = 12, maxChars: Int = 800) -> String {
+    static func summarize(notes: String, maxLines: Int = 10, maxChars: Int = 800) -> String {
         if notes.isEmpty {
             return String(
                 localized: "Open the release page to see what's new and download the new build."
             )
         }
-        let trimmed = notes
+        // 1. Strip HTML tags. The feed content is HTML; without this the
+        //    alert shows literal `<h2>Install</h2>` etc.
+        let stripped = notes.replacingOccurrences(
+            of: "<[^>]+>", with: "", options: .regularExpression
+        )
+        // 2. Strip markdown leaders (`#`, `-`, `*`) and drop empty lines.
+        var lines = stripped
             .components(separatedBy: .newlines)
             .map { line -> String in
                 var l = line
-                // Strip leading '#' (markdown headers) and the spaces
-                // that typically follow.
                 while l.first == "#" || l.first == " " || l.first == "*" || l.first == "-" {
                     l.removeFirst()
                 }
                 return l.trimmingCharacters(in: .whitespaces)
             }
             .filter { !$0.isEmpty }
-        let head = trimmed.prefix(maxLines).joined(separator: "\n")
+        // 3. Skip the install boilerplate. Every release body from our
+        //    template leads with an "Install" section (download / drag /
+        //    right-click-open) that's noise in an "update available"
+        //    alert. When a "Changes" heading is present, start the
+        //    summary right after it so the user sees what actually
+        //    changed.
+        if let changesIdx = lines.firstIndex(where: {
+            $0.caseInsensitiveCompare("Changes") == .orderedSame
+        }) {
+            lines = Array(lines[(changesIdx + 1)...])
+        }
+        let head = lines.prefix(maxLines).joined(separator: "\n")
         if head.count <= maxChars { return head }
         let idx = head.index(head.startIndex, offsetBy: maxChars)
         return String(head[..<idx]).trimmingCharacters(in: .whitespacesAndNewlines) + "…"

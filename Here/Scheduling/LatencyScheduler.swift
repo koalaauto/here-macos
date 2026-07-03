@@ -78,6 +78,13 @@ final class LatencyScheduler {
                 guard let self else { return }
                 switch event {
                 case .becameReachable, .interfaceChanged, .pathChanged:
+                    // Respect the master switch: with the latency module
+                    // off, the periodic loop is already suppressed
+                    // (`restartLoop` guards on `latencyEnabled`), so a
+                    // network event shouldn't sneak a probe in either —
+                    // that would push samples the user can't see and
+                    // leave stale data waiting when they re-enable.
+                    guard self.settings.latencyEnabled else { break }
                     // Tear down the long-lived URLSession before the
                     // next probe so any keep-alive connections from
                     // the *previous* network plane / proxy state get

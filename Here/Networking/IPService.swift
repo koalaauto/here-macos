@@ -93,19 +93,6 @@ actor IPService {
         emit(.error(.offline, cached: cached?.model, fetchedAt: cached?.fetchedAt))
     }
 
-    /// Flip to `.loading(cached:)` immediately, ahead of an upcoming
-    /// fetch. Used by the scheduler when a network event arrives but
-    /// we're going to wait a beat (2 s) before actually issuing the
-    /// request. Without this the widget + popover keep rendering the
-    /// prior `.error(.offline)` during the settling window, which reads
-    /// as "the app hasn't noticed the network came back". No-op if a
-    /// fetch is already inflight or we're already in `.loading`.
-    func beginLoadingPlaceholder() {
-        if inflight != nil { return }
-        if case .loading = currentState { return }
-        emit(.loading(cached: currentState.model))
-    }
-
     /// Trigger an IP lookup.
     ///
     /// - Parameters:

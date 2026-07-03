@@ -1,6 +1,6 @@
 import Foundation
 
-struct LatencySample: Sendable, Equatable, Identifiable, Codable {
+struct LatencySample: Sendable, Equatable, Identifiable {
     let id: UUID
     let at: Date
     /// Measured round-trip in milliseconds. `nil` means the probe timed out or errored.

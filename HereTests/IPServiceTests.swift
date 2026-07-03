@@ -56,6 +56,24 @@ struct IPServiceTests {
         }
     }
 
+    /// Hangs on the *first* `fetch()` (like `HangingProvider`), then
+    /// succeeds on every call after. Lets a test drive one `IPService`
+    /// through hard-timeout AND recovery, proving the *same* actor is
+    /// usable again — not just that a fresh instance works.
+    struct RecoveringProvider: IPProvider {
+        let name = "recovering"
+        let model: IPDataModel
+        nonisolated(unsafe) let counter = StubProvider.Counter()
+
+        func fetch() async throws -> IPDataModel {
+            if counter.next() == 0 {
+                try await Task.sleep(for: .seconds(3600))
+                fatalError("unreachable: cancelled by the hard timeout")
+            }
+            return model
+        }
+    }
+
     /// Build a synthetic `IPDataModel` directly via memberwise init.
     /// The model is no longer the JSON wire format of any provider —
     /// providers each own their own raw shape and a `map(_:)` adapter,
@@ -152,17 +170,33 @@ struct IPServiceTests {
         // provider's 3600 s. Generous upper bound to stay non-flaky
         // under CI load.
         #expect(elapsed < 5)
+    }
 
-        // And the actor must be usable again afterwards — a second
-        // refresh isn't parked on the dead first one.
+    /// Companion to the timeout test: after a hung fetch is force-
+    /// resolved by the hard timeout, the **same** actor must accept a
+    /// new refresh (inflight was cleared) and load normally. Guards the
+    /// real bug — a wedged `inflight` freezing every later caller — in a
+    /// way the previous fresh-instance assertion couldn't.
+    @Test func actorRecoversAfterHungFetch() async {
         let model = sampleModel()
-        let service2 = IPService(
-            provider: StubProvider(pages: [.success(model)]),
-            cache: ephemeralCache()
+        let service = IPService(
+            provider: RecoveringProvider(model: model),
+            cache: ephemeralCache(),
+            fetchHardTimeout: 0.2
         )
-        let recovered = await service2.refresh(force: true)
-        if case .loaded = recovered {} else {
-            Issue.record("Expected .loaded after recovery, got \(recovered)")
+
+        let first = await service.refresh(force: true)
+        if case .error(let err, _, _) = first {
+            #expect(err == .timeout)
+        } else {
+            Issue.record("Expected .error(.timeout) on the first (hung) refresh, got \(first)")
+        }
+
+        let second = await service.refresh(force: true)
+        if case .loaded(let got, _) = second {
+            #expect(got == model)
+        } else {
+            Issue.record("Expected .loaded after recovery on the same actor, got \(second)")
         }
     }
 

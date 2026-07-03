@@ -179,22 +179,32 @@ struct IPGuideProvider: IPProvider {
     static func alpha2(forCountryName name: String) -> String? {
         let needle = name.trimmingCharacters(in: .whitespaces).lowercased()
         guard !needle.isEmpty else { return nil }
-
-        let locale = Locale(identifier: "en_US")
-        for region in Locale.Region.isoRegions {
-            // `Locale.Region.isoRegions` includes subdivisions like
-            // `"US-CA"` on some macOS versions. Filter to country-level
-            // (2-char) codes only — the drift dict handles the rest.
-            let code = region.identifier
-            guard code.count == 2 else { continue }
-            if let englishName = locale.localizedString(forRegionCode: code),
-               englishName.lowercased() == needle {
-                return code.uppercased()
-            }
-        }
-
+        if let code = localeReverseIndex[needle] { return code }
         return driftDict[needle]
     }
+
+    /// Lowercased Apple-`en_US` country name → alpha-2, built once at
+    /// first use. Replaces a per-call linear scan over ~250 ISO regions:
+    /// when the primary provider is down this reverse-lookup runs on
+    /// every 5 s poll while ip.guide carries the widget, so the scan was
+    /// pure wasted work each tick.
+    ///
+    /// Country-level only: `Locale.Region.isoRegions` includes
+    /// subdivisions like `"US-CA"` on some macOS versions, so we filter
+    /// to 2-char codes and let `driftDict` handle the ISO long-forms
+    /// Apple doesn't recognise.
+    private static let localeReverseIndex: [String: String] = {
+        let locale = Locale(identifier: "en_US")
+        var index: [String: String] = [:]
+        for region in Locale.Region.isoRegions {
+            let code = region.identifier
+            guard code.count == 2 else { continue }
+            if let englishName = locale.localizedString(forRegionCode: code) {
+                index[englishName.lowercased()] = code.uppercased()
+            }
+        }
+        return index
+    }()
 
     /// ISO 3166-1 long-form spellings that Apple's Locale tables ship
     /// in shorter form, so the Locale reverse-lookup misses them.
@@ -232,7 +242,25 @@ struct IPGuideProvider: IPProvider {
         "united kingdom of great britain and northern ireland": "GB",
         "bolivarian republic of venezuela": "VE",
         "venezuela, bolivarian republic of": "VE",
-        "viet nam": "VN"
+        "viet nam": "VN",
+        // ISO 3166 long-forms (and common ASCII spellings) that Apple's
+        // Locale short-forms or renders with diacritics — the reverse
+        // index above misses these, so a VPN egress in one of these
+        // countries would otherwise throw `.decoding` and break failover.
+        "brunei darussalam": "BN",
+        "cabo verde": "CV",
+        "cote d'ivoire": "CI",
+        "ivory coast": "CI",
+        "congo, democratic republic of the": "CD",
+        "democratic republic of the congo": "CD",
+        "micronesia, federated states of": "FM",
+        "federated states of micronesia": "FM",
+        "falkland islands (malvinas)": "FK",
+        "timor-leste": "TL",
+        "east timor": "TL",
+        "holy see": "VA",
+        "holy see (vatican city state)": "VA",
+        "vatican city state": "VA"
     ]
 }
 

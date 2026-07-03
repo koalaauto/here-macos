@@ -324,6 +324,35 @@ struct UpdateCheckerTests {
         #expect(!s.isEmpty)
     }
 
+    /// Regression for the alert showing raw HTML. Release notes arrive
+    /// from the atom feed as HTML (`<h2>`, `<ul>`, `<li>`, entities
+    /// already decoded by XMLParser) leading with an Install section.
+    /// `summarize` must strip the tags and skip the install boilerplate
+    /// so the alert reads as prose, not markup.
+    @MainActor
+    @Test func summarizeStripsHTMLAndSkipsInstallSection() {
+        let notes = """
+        <h2>Install</h2>
+        <ol>
+        <li>Download Here-0.34.0.dmg below.</li>
+        <li>Open and drag Here into Applications.</li>
+        </ol>
+        <h2>Changes</h2>
+        <ul>
+        <li>Two-provider failover for IP lookup.</li>
+        <li>Fixed the frozen-widget bug.</li>
+        </ul>
+        """
+        let s = UpdateCoordinator.summarize(notes: notes)
+        // No HTML tags leak into the alert.
+        #expect(!s.contains("<"))
+        #expect(!s.contains(">"))
+        // Install boilerplate skipped, real changes surfaced.
+        #expect(!s.contains("Download Here-0.34.0.dmg"))
+        #expect(s.contains("Two-provider failover for IP lookup."))
+        #expect(s.contains("Fixed the frozen-widget bug."))
+    }
+
     // MARK: - Frequency model
 
     /// Cadence values must align with what the picker offers and what

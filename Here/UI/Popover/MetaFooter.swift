@@ -46,7 +46,7 @@ struct MetaFooter: View {
     }
 
     private func handleSettingsTap() {
-        NotificationCenter.default.post(name: .ipGuidePopoverCloseRequested, object: nil)
+        NotificationCenter.default.post(name: .popoverCloseRequested, object: nil)
         openSettings()
     }
 

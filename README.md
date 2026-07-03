@@ -10,7 +10,7 @@ A tiny macOS menu bar app that answers that question, always. Flip a VPN, hop Wi
 
 ## What you see
 
-**The pill** lives in your menu bar: flag + region code (🇺🇸 LA, 🇯🇵 TYO, 🇹🇼 TPE…). Border turns **red** the moment the latency probe says the network's actually broken. When egress can't be verified (airplane mode, IP service unreachable), the pill flips to a **random flag + `OO`** — an honest "I don't know" instead of a stale lie.
+**The pill** lives in your menu bar: flag + a two-letter region tag (🇺🇸 CA, 🇯🇵 TK, 🇸🇬 SG…). The outline switches to a **dashed border** the moment the latency probe says the network's actually broken. When egress can't be verified (airplane mode, IP service unreachable), the pill flips to a **random flag + `OO`** — an honest "I don't know" instead of a stale lie.
 
 **Click the pill** for the popover above:
 
@@ -22,13 +22,13 @@ A tiny macOS menu bar app that answers that question, always. Flip a VPN, hop Wi
 ## Smart enough to keep up
 
 - Catches **every** meaningful network change — WiFi hops, VPN up/down, Clash "system proxy" flips. The widget rechecks on a 5-second loop (30s while the display is asleep), so a node switch lands in your menu bar within one tick.
-- **One shot per change.** No retry storms. Fails fast, respects your sanity.
+- **One lookup per change.** No retry storms — a single attempt per tick (at most one fallback hop if the primary provider is down). Fails fast, respects your sanity.
 - Flag follows the **geographic country**, not the ASN country. A VPN registered in HK but serving a Taiwan node shows 🇹🇼, not 🇭🇰.
 - **Self-updating.** Daily check against GitHub releases (Never / Once a day / Once a week, your call) — when there's a new build it nudges you with the release notes and a one-click jump to the download.
 
 ## Install
 
-Grab the latest `.dmg` from [**Releases**](https://github.com/bikekoala/here-macos/releases) → drag **Here** into **Applications** → first launch: right-click → **Open** (the build is unsigned).
+Grab the latest `.dmg` from [**Releases**](https://github.com/koalaauto/here-macos/releases) → drag **Here** into **Applications** → first launch: right-click → **Open** (the build is unsigned).
 
 - **macOS 15 Sequoia** or later
 - **Apple Silicon + Intel** — universal binary, any Mac that supports Sequoia
@@ -36,7 +36,7 @@ Grab the latest `.dmg` from [**Releases**](https://github.com/bikekoala/here-mac
 ## Build from source
 
 ```sh
-git clone https://github.com/bikekoala/here-macos.git
+git clone https://github.com/koalaauto/here-macos.git
 cd here-macos
 open Here.xcodeproj       # Cmd-R to run, Cmd-U to test
 ```
@@ -50,7 +50,7 @@ xcodebuild -project Here.xcodeproj -scheme Here test
 
 ## Credits
 
-- IP + location data from [**ipwho.is**](https://ipwho.is/) — free, no auth, one JSON call. Thank you. (Earlier versions used ip.guide; switched in v0.26.0 after consistent VPN-egress mislabelling.)
+- IP + location data from [**ipwho.is**](https://ipwho.is/) (primary) and [**ip.guide**](https://ip.guide/) (automatic fallback since v0.33.0) — both free, no auth, one JSON call each. Thank you.
 - Flag art from [**flagcdn.com**](https://flagcdn.com/) — rectangular PNGs, public-domain.
 
 Architecture, conventions, and gotchas live in [CLAUDE.md](CLAUDE.md).

@@ -4,30 +4,30 @@ import Foundation
 @MainActor
 final class SettingsStore {
     var showMode: ShowMode {
-        didSet { UserDefaults.standard.set(showMode.rawValue, forKey: Keys.showMode) }
+        didSet { defaults.set(showMode.rawValue, forKey: Keys.showMode) }
     }
 
     var countryStyle: CountryStyle {
-        didSet { UserDefaults.standard.set(countryStyle.rawValue, forKey: Keys.countryStyle) }
+        didSet { defaults.set(countryStyle.rawValue, forKey: Keys.countryStyle) }
     }
 
     var launchAtLogin: Bool {
-        didSet { UserDefaults.standard.set(launchAtLogin, forKey: Keys.launchAtLogin) }
+        didSet { defaults.set(launchAtLogin, forKey: Keys.launchAtLogin) }
     }
 
     var latencyEnabled: Bool {
-        didSet { UserDefaults.standard.set(latencyEnabled, forKey: Keys.latencyEnabled) }
+        didSet { defaults.set(latencyEnabled, forKey: Keys.latencyEnabled) }
     }
 
     var latencyProbeTarget: LatencyProbeTarget {
-        didSet { UserDefaults.standard.set(latencyProbeTarget.rawValue, forKey: Keys.latencyProbeTarget) }
+        didSet { defaults.set(latencyProbeTarget.rawValue, forKey: Keys.latencyProbeTarget) }
     }
 
     /// HTTPS URL probed when `latencyProbeTarget == .custom`. Ignored
     /// otherwise. Any reachable resource works — the probe issues a
     /// HEAD and times the round trip.
     var latencyCustomURL: String {
-        didSet { UserDefaults.standard.set(latencyCustomURL, forKey: Keys.latencyCustomURL) }
+        didSet { defaults.set(latencyCustomURL, forKey: Keys.latencyCustomURL) }
     }
 
     /// Concrete URL the latency probe should hit. Returns `nil` when
@@ -39,11 +39,11 @@ final class SettingsStore {
     }
 
     var latencyIntervalSeconds: Int {
-        didSet { UserDefaults.standard.set(latencyIntervalSeconds, forKey: Keys.latencyIntervalSeconds) }
+        didSet { defaults.set(latencyIntervalSeconds, forKey: Keys.latencyIntervalSeconds) }
     }
 
     var latencySlotCount: Int {
-        didSet { UserDefaults.standard.set(latencySlotCount, forKey: Keys.latencySlotCount) }
+        didSet { defaults.set(latencySlotCount, forKey: Keys.latencySlotCount) }
     }
 
     /// When true, the status-bar pill border turns red whenever the
@@ -52,13 +52,13 @@ final class SettingsStore {
     /// of latency. Only meaningful when the latency module itself is
     /// enabled.
     var widgetLatencyAlert: Bool {
-        didSet { UserDefaults.standard.set(widgetLatencyAlert, forKey: Keys.widgetLatencyAlert) }
+        didSet { defaults.set(widgetLatencyAlert, forKey: Keys.widgetLatencyAlert) }
     }
 
     var popoverModuleOrder: [PopoverModule] {
         didSet {
             let raw = popoverModuleOrder.map(\.rawValue)
-            UserDefaults.standard.set(raw, forKey: Keys.popoverModuleOrder)
+            defaults.set(raw, forKey: Keys.popoverModuleOrder)
         }
     }
 
@@ -66,21 +66,21 @@ final class SettingsStore {
     /// (wide global footprint, rarely filtered); users on networks that
     /// prefer Cloudflare or need a self-hosted server can switch here.
     var throughputEndpoint: ThroughputEndpoint {
-        didSet { UserDefaults.standard.set(throughputEndpoint.rawValue, forKey: Keys.throughputEndpoint) }
+        didSet { defaults.set(throughputEndpoint.rawValue, forKey: Keys.throughputEndpoint) }
     }
 
     /// HTTP(S) URL of the file used when `throughputEndpoint == .custom`.
     /// Ignored otherwise. Any resource that responds 200 OK to a GET and
     /// delivers ≥ a few MB of body works.
     var throughputCustomURL: String {
-        didSet { UserDefaults.standard.set(throughputCustomURL, forKey: Keys.throughputCustomURL) }
+        didSet { defaults.set(throughputCustomURL, forKey: Keys.throughputCustomURL) }
     }
 
     /// How often to poll GitHub for a newer release.
     /// Defaults to `.daily` — see `UpdateCheckFrequency` for the
     /// rationale on the available cadences.
     var updateCheckFrequency: UpdateCheckFrequency {
-        didSet { UserDefaults.standard.set(updateCheckFrequency.rawValue, forKey: Keys.updateCheckFrequency) }
+        didSet { defaults.set(updateCheckFrequency.rawValue, forKey: Keys.updateCheckFrequency) }
     }
 
     /// Wall-clock time of the last successful (or attempted-and-failed)
@@ -90,9 +90,9 @@ final class SettingsStore {
     var lastUpdateCheckAt: Date? {
         didSet {
             if let date = lastUpdateCheckAt {
-                UserDefaults.standard.set(date, forKey: Keys.lastUpdateCheckAt)
+                defaults.set(date, forKey: Keys.lastUpdateCheckAt)
             } else {
-                UserDefaults.standard.removeObject(forKey: Keys.lastUpdateCheckAt)
+                defaults.removeObject(forKey: Keys.lastUpdateCheckAt)
             }
         }
     }
@@ -105,9 +105,9 @@ final class SettingsStore {
     var skippedUpdateVersion: String? {
         didSet {
             if let version = skippedUpdateVersion {
-                UserDefaults.standard.set(version, forKey: Keys.skippedUpdateVersion)
+                defaults.set(version, forKey: Keys.skippedUpdateVersion)
             } else {
-                UserDefaults.standard.removeObject(forKey: Keys.skippedUpdateVersion)
+                defaults.removeObject(forKey: Keys.skippedUpdateVersion)
             }
         }
     }
@@ -125,7 +125,16 @@ final class SettingsStore {
         set { latencyIntervalSeconds = newValue.rawValue }
     }
 
+    /// Backing store for every read and write. Injectable so tests can
+    /// pass an isolated `UserDefaults(suiteName:)` instead of reading
+    /// from — and writing into — the shared `.standard` domain. Before
+    /// this, the initializer honoured the injected store but every
+    /// `didSet` still wrote to `.standard`, so a test-injected suite
+    /// leaked persistence into the global domain.
+    @ObservationIgnored private let defaults: UserDefaults
+
     init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         self.showMode = (defaults.string(forKey: Keys.showMode).flatMap(ShowMode.init(rawValue:))) ?? .both
         self.countryStyle = (defaults.string(forKey: Keys.countryStyle).flatMap(CountryStyle.init(rawValue:))) ?? .flag
         // (Retired v0.29.0): refresh-interval picker. The IP refresh

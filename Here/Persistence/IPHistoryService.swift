@@ -3,8 +3,9 @@ import Foundation
 /// Observes egress-IP changes and keeps a capped, persisted chronological
 /// list for the History card.
 ///
-/// Storage: `~/…/Application Support/Here/ip_history.json` (sandbox
-/// container for the signed bundle).
+/// Storage: `~/Library/Application Support/Here/ip_history.json` — the
+/// app ships without App Sandbox (see `Here.entitlements`), so this is
+/// the real user Library path, not a sandbox container.
 ///
 /// Two-axis retention:
 /// - **Count cap** (`maxEvents`): the chain visualization shows the last

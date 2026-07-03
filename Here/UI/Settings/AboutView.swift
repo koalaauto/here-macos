@@ -18,7 +18,7 @@ struct AboutView: View {
                 .monospacedDigit()
 
             Button {
-                if let url = URL(string: "https://github.com/bikekoala/here-macos") {
+                if let url = URL(string: "https://github.com/koalaauto/here-macos") {
                     openURL(url)
                 }
             } label: {

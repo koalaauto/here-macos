@@ -433,14 +433,3 @@ enum UpdateCheckError: Error, Equatable, Sendable {
         return .transport(error.localizedDescription)
     }
 }
-
-// MARK: - Bundle version helper
-
-/// Convenience wrapper around `CFBundleShortVersionString`. Lives
-/// alongside the update checker because it's the only consumer
-/// today; promote to a top-level utility if a second caller appears.
-enum AppVersion {
-    static var current: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
-    }
-}

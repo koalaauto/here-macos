@@ -28,7 +28,7 @@ struct ThroughputCard: View {
     @State private var status: ThroughputStatus = .idle(lastResult: nil)
 
     private static let invalidCustomURLMessage = String(
-        localized: "Custom URL isn't a valid https:// URL."
+        localized: "Custom URL isn't a valid http:// or https:// URL."
     )
 
     var body: some View {

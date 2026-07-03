@@ -16,7 +16,7 @@ struct ModulesSettingsView: View {
             } header: {
                 Text(String(localized: "Popover module order"))
             } footer: {
-                Text(String(localized: "Drag to reorder cards in the popover."))
+                Text(String(localized: "Use the arrows to reorder cards in the popover."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -61,11 +61,11 @@ struct ModulesSettingsView: View {
                 .disabled(!settings.latencyEnabled)
 
                 Toggle(
-                    String(localized: "Red border on poor latency"),
+                    String(localized: "Dashed border on poor latency"),
                     isOn: $settings.widgetLatencyAlert
                 )
                 .disabled(!settings.latencyEnabled)
-                .help(String(localized: "Turn the menu bar pill border red when a probe times out or exceeds 600 ms."))
+                .help(String(localized: "Switch the menu bar pill to a dashed outline when a probe times out or exceeds 600 ms."))
             }
 
             Section {

@@ -101,7 +101,18 @@ actor UpdateInstaller {
         let session = URLSession(configuration: config)
         defer { session.invalidateAndCancel() }
 
-        let (asyncBytes, response) = try await session.bytes(from: url)
+        let request = URLRequest(url: url)
+        // Probe task creation through the NSException barrier before the
+        // real download. The system `bytes(...)` builds its data task the
+        // same way `data(for:)` does (`taskForClassInfo:`), which can
+        // SIGABRT under utun / transparent-proxy states (see
+        // URLSession+Safe.swift, v0.32.1). There's no public hook to wrap
+        // `bytes(for:)`'s own task creation, so we create-and-cancel a
+        // throwaway task via the safe shim purely to convert that
+        // exception into a catchable Swift error on this path too, rather
+        // than crashing mid-update.
+        try session.safeDataTask(with: request).cancel()
+        let (asyncBytes, response) = try await session.bytes(for: request)
         guard let http = response as? HTTPURLResponse,
               (200..<300).contains(http.statusCode) else {
             throw InstallError.downloadFailed("HTTP \((response as? HTTPURLResponse)?.statusCode ?? -1)")
@@ -221,6 +232,11 @@ actor UpdateInstaller {
             if ! kill -0 \(pid) 2>/dev/null; then break; fi
             sleep 0.1
         done
+        # If the parent is STILL alive after the ~10 s budget, something
+        # is wrong. Bail rather than rm -rf'ing a running bundle out from
+        # under it — that would leave a half-deleted or double-launched
+        # app. The old version stays intact and the user can retry.
+        if kill -0 \(pid) 2>/dev/null; then rm -f "$0"; exit 1; fi
         rm -rf '\(install)' 2>/dev/null
         if ! mv '\(staged)' '\(install)'; then exit 1; fi
         xattr -dr com.apple.quarantine '\(install)' 2>/dev/null || true

@@ -28,7 +28,7 @@ enum StatusBarTitleRenderer {
         }
     }
 
-    struct Input: Sendable {
+    struct Input: Sendable, Equatable {
         let countryAlpha2: String?
         let regionCode: String?
         let showMode: ShowMode
@@ -154,5 +154,4 @@ enum StatusBarTitleRenderer {
         return image
     }
 
-    static var placeholder: String { "— —" }
 }

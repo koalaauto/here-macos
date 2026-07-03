@@ -6,8 +6,8 @@
 "Country only" = "Country only";
 "Region only" = "Region only";
 "Country and region" = "Country and region";
-"Text (e.g. US)" = "Text (e.g. US)";
-"Flag (e.g. 🇺🇸)" = "Flag (e.g. 🇺🇸)";
+"Text" = "Text";
+"Flag" = "Flag";
 
 /* Status bar menu */
 "Refresh" = "Refresh";
@@ -26,21 +26,22 @@
 "Status bar shows" = "Status bar shows";
 "Country style" = "Country style";
 "Country display" = "Country display";
-"Preview" = "Preview";
-"Menu bar:" = "Menu bar:";
 
 /* Modules settings */
 "Popover module order" = "Popover module order";
-"Drag to reorder cards in the popover." = "Drag to reorder cards in the popover.";
+"Use the arrows to reorder cards in the popover." = "Use the arrows to reorder cards in the popover.";
 "Move up" = "Move up";
 "Move down" = "Move down";
 "Latency probe" = "Latency probe";
 "Enable" = "Enable";
 "Target" = "Target";
 "Interval" = "Interval";
+"Every minute" = "Every minute";
+"Every 5 minutes" = "Every 5 minutes";
+"Every 10 minutes" = "Every 10 minutes";
 "Slots" = "Slots";
-"Red border on poor latency" = "Red border on poor latency";
-"Turn the menu bar pill border red when a probe times out or exceeds 600 ms." = "Turn the menu bar pill border red when a probe times out or exceeds 600 ms.";
+"Dashed border on poor latency" = "Dashed border on poor latency";
+"Switch the menu bar pill to a dashed outline when a probe times out or exceeds 600 ms." = "Switch the menu bar pill to a dashed outline when a probe times out or exceeds 600 ms.";
 "Source" = "Source";
 "URL" = "URL";
 "Cachefly (100 MB)" = "Cachefly (100 MB)";
@@ -49,7 +50,7 @@
 "100 MB from Cachefly CDN. Default." = "100 MB from Cachefly CDN. Default.";
 "100 MB from speed.cloudflare.com. Sometimes blocked." = "100 MB from speed.cloudflare.com. Sometimes blocked.";
 "Any HTTP or HTTPS URL. 10 MB or larger works best." = "Any HTTP or HTTPS URL. 10 MB or larger works best.";
-"Custom URL isn't a valid https:// URL." = "Custom URL isn't a valid https:// URL.";
+"Custom URL isn't a valid http:// or https:// URL." = "Custom URL isn't a valid http:// or https:// URL.";
 "Invalid URL" = "Invalid URL";
 "Valid URL" = "Valid URL";
 
@@ -61,10 +62,9 @@
 "ASN" = "ASN";
 "Org" = "Org";
 "RIR" = "RIR";
-"Coords" = "Coords";
 "Timezone" = "Timezone";
 "Open in Maps" = "Open in Maps";
-"Open ip-api.com in browser" = "Open ip-api.com in browser";
+"Open ipwho.is in browser" = "Open ipwho.is in browser";
 
 /* Popover — module labels + icons */
 "Location" = "Location";
@@ -98,7 +98,6 @@
 
 /* Popover — loading + errors */
 "Looking up your IP…" = "Looking up your IP…";
-"Loading…" = "Loading…";
 "Updated %@" = "Updated %@";
 "Data may be out of date" = "Data may be out of date";
 "Can't reach the IP lookup service" = "Can't reach the IP lookup service";
@@ -107,7 +106,7 @@
 /* IPService error messages */
 "No network connection." = "No network connection.";
 "The IP lookup request timed out." = "The IP lookup request timed out.";
-"The IP lookup service returned an error (%d)." = "The IP lookup service returned an error (%d).";
+"The IP lookup service returned an error (%lld)." = "The IP lookup service returned an error (%lld).";
 "Got an unexpected response from the IP lookup service." = "Got an unexpected response from the IP lookup service.";
 "Network error: %@" = "Network error: %@";
 "Request cancelled." = "Request cancelled.";
@@ -146,6 +145,6 @@
 /* Update checker errors */
 "The update check timed out." = "The update check timed out.";
 "Couldn't reach the update server: %@" = "Couldn't reach the update server: %@";
-"The update server returned an error (%d)." = "The update server returned an error (%d).";
+"The update server returned an error (%lld)." = "The update server returned an error (%lld).";
 "Couldn't read the update server's response." = "Couldn't read the update server's response.";
 "Update check cancelled." = "Update check cancelled.";

@@ -263,7 +263,6 @@
 				AA0000000000000020000060 /* AppUserAgent.swift */,
 				AA000000000000002000000A /* NetworkMonitor.swift */,
 				AA0000000000000020000028 /* LatencyService.swift */,
-				AA000000000000002000004B /* IPHistoryService.swift */,
 				AA000000000000002000004D /* ThroughputService.swift */,
 				AA0000000000000020000081 /* UpdateChecker.swift */,
 				AA0000000000000020000090 /* HereURLSessionSafe.h */,
@@ -304,6 +303,7 @@
 			children = (
 				AA0000000000000020000011 /* IPCache.swift */,
 				AA0000000000000020000012 /* SettingsStore.swift */,
+				AA000000000000002000004B /* IPHistoryService.swift */,
 			);
 			path = Persistence;
 			sourceTree = "<group>";

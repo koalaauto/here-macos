@@ -1,6 +1,21 @@
 import Foundation
 
 extension URLSession {
+    /// Delegate-style task creation guarded by the same `@try`/`@catch`
+    /// barrier as `safeData(for:)`. Use this for `URLSessionDataDelegate`-
+    /// backed flows (e.g. `ThroughputService.SpeedProbe`) where you need
+    /// the raw `URLSessionDataTask` to call `.resume()` yourself.
+    ///
+    /// Throws an `NSError` (in `HereURLSessionSafeErrorDomain`) if the
+    /// underlying `dataTask(with:)` would have thrown an `NSException`.
+    func safeDataTask(with request: URLRequest) throws -> URLSessionDataTask {
+        var outError: NSError?
+        let task = HereSafeDataTaskWithoutCompletion(self, request, &outError)
+        if let outError { throw outError }
+        guard let task else { throw URLError(.unknown) }
+        return task
+    }
+
     /// Drop-in replacement for `data(for:)` that survives an Obj-C
     /// `NSException` thrown from URLSession's internal task creation
     /// (`-[__NSURLSessionLocal taskForClassInfo:]` and similar).
@@ -20,21 +35,6 @@ extension URLSession {
     /// supports task cancellation via `withTaskCancellationHandler`,
     /// and emits `URLError.cancelled` from the completion handler
     /// when the Swift task is cancelled mid-flight.
-    /// Delegate-style task creation guarded by the same `@try`/`@catch`
-    /// barrier as `safeData(for:)`. Use this for `URLSessionDataDelegate`-
-    /// backed flows (e.g. `ThroughputService.SpeedProbe`) where you need
-    /// the raw `URLSessionDataTask` to call `.resume()` yourself.
-    ///
-    /// Throws an `NSError` (in `HereURLSessionSafeErrorDomain`) if the
-    /// underlying `dataTask(with:)` would have thrown an `NSException`.
-    func safeDataTask(with request: URLRequest) throws -> URLSessionDataTask {
-        var outError: NSError?
-        let task = HereSafeDataTaskWithoutCompletion(self, request, &outError)
-        if let outError { throw outError }
-        guard let task else { throw URLError(.unknown) }
-        return task
-    }
-
     func safeData(for request: URLRequest) async throws -> (Data, URLResponse) {
         let storage = SafeTaskStorage()
         return try await withTaskCancellationHandler {
