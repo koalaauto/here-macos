@@ -32,9 +32,36 @@ Install full Xcode from the Mac App Store or developer.apple.com. `xcode-select 
 ## Build & run
 
 - Open `Here.xcodeproj` in Xcode, Cmd-R.
-- CLI: `xcodebuild -project Here.xcodeproj -scheme Here -configuration Debug build`
-- Unit tests: Cmd-U in Xcode, or `xcodebuild -project Here.xcodeproj -scheme Here test`
+- CLI: `xcodebuild -project Here.xcodeproj -scheme Here -configuration Debug build -quiet`
+- Unit tests: Cmd-U in Xcode, or `xcodebuild -project Here.xcodeproj -scheme Here test -quiet`
 - Tail logs: `log stream --predicate 'subsystem == "app.here-macos"' --info --debug`
+
+### Always pass `-quiet` from an agent session
+
+`xcodebuild` output lands in the conversation and is then re-sent on **every** subsequent
+turn, so build noise is the single largest avoidable token cost in this repo. Measured on
+this project:
+
+| command | without `-quiet` | with `-quiet` |
+| --- | --- | --- |
+| clean build | 739 lines | 4 lines |
+| incremental build | 33 lines | 4 lines |
+| `test` (all passing) | 723 lines | 8 lines |
+
+Nothing load-bearing is lost. Verified by deliberately breaking an assertion: `-quiet`
+still prints `Failing tests:`, the failing test name, `** TEST FAILED **`, and exits 65.
+Compiler `error:` lines are likewise preserved — `-quiet` suppresses success chatter only.
+
+**The one caveat:** `-quiet` omits the per-assertion detail (actual vs. expected values).
+When a test fails, re-run just that test verbosely to see why:
+
+```bash
+xcodebuild -project Here.xcodeproj -scheme Here test -only-testing:HereTests/CountryFlagTests
+```
+
+For a genuinely noisy job (full clean build while chasing a compiler error, `log stream`
+capture), run it in a subagent and bring back only the conclusion rather than piping
+hundreds of lines into the main session.
 
 ## Conventions
 
