@@ -92,6 +92,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     @objc private func handleClick(_ sender: NSStatusBarButton) {
         let event = NSApp.currentEvent
         if event?.type == .rightMouseUp {
+            if popoverOpen { closePopover() }
             showContextMenu()
         } else {
             togglePopover()
@@ -236,21 +237,33 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     ///    level. Any time another window steals focus from the
     ///    popover, we close.
     ///
-    /// All three call into the same `closePopover()` which is
-    /// idempotent — duplicate fires are harmless.
+    /// All three call into `dismissFromOutside(pointer:pressed:)`, which
+    /// ignores presses on our *own* status item (see there) and
+    /// otherwise calls the idempotent `closePopover()`.
+    ///
+    /// The pointer position and button state are sampled **synchronously
+    /// inside the callback**, before the hop to the main actor: by the
+    /// time the `Task` runs, a fast click may already be released.
     private func installDismissMonitors() {
         removeDismissMonitors()
         globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown]
         ) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.closePopover() }
+            let pointer = NSEvent.mouseLocation
+            Task { @MainActor [weak self] in
+                self?.dismissFromOutside(pointer: pointer, pressed: true)
+            }
         }
         resignObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didResignActiveNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.closePopover() }
+            let pointer = NSEvent.mouseLocation
+            let pressed = NSEvent.pressedMouseButtons != 0
+            Task { @MainActor [weak self] in
+                self?.dismissFromOutside(pointer: pointer, pressed: pressed)
+            }
         }
         if let popoverWindow = popoverHost.popover.contentViewController?.view.window {
             popoverResignKeyObserver = NotificationCenter.default.addObserver(
@@ -258,9 +271,42 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
                 object: popoverWindow,
                 queue: .main
             ) { [weak self] _ in
-                Task { @MainActor [weak self] in self?.closePopover() }
+                let pointer = NSEvent.mouseLocation
+                let pressed = NSEvent.pressedMouseButtons != 0
+                Task { @MainActor [weak self] in
+                    self?.dismissFromOutside(pointer: pointer, pressed: pressed)
+                }
             }
         }
+    }
+
+    /// Close the popover in response to an "outside" signal — unless the
+    /// signal is the mouse-down of a click on our own status item.
+    ///
+    /// ### Why
+    /// The status item's action fires on mouse-*up* and toggles. If the
+    /// mouse-*down* of that same click is first reported as an outside
+    /// interaction (global monitor and/or popover resigning key — which
+    /// is what newer macOS releases do for clicks on menu-bar items),
+    /// `closePopover()` runs on mouse-down, `popoverOpen` is already
+    /// `false` by mouse-up, and the toggle **re-opens** the popover a
+    /// moment later. Worse, the still-pending `popoverDidClose` of the
+    /// first close then tore down the new session's dismiss monitors,
+    /// so the re-opened popover never closed on focus loss.
+    ///
+    /// Ignoring the press here leaves closing to the toggle, which is
+    /// the one place that knows the click was aimed at the icon.
+    private func dismissFromOutside(pointer: NSPoint, pressed: Bool) {
+        if pressed, isOverStatusItem(pointer) { return }
+        closePopover()
+    }
+
+    private func isOverStatusItem(_ point: NSPoint) -> Bool {
+        guard let button = statusItem.button, let window = button.window else { return false }
+        let frame = window.convertToScreen(button.convert(button.bounds, to: nil))
+        // Small slop: the pointer sits on the screen's top edge (y at
+        // the maximum) and the button frame is half-open.
+        return frame.insetBy(dx: -2, dy: -2).contains(point)
     }
 
     private func removeDismissMonitors() {
@@ -283,6 +329,11 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     nonisolated func popoverDidClose(_ notification: Notification) {
         Task { @MainActor [weak self] in
             guard let self else { return }
+            // A close that was in flight when the user re-opened the
+            // popover (quick close → open) reports `didClose` *after* the
+            // new `show`. Tearing down state then would leave a visible
+            // popover with no dismiss monitors.
+            guard !self.popoverHost.popover.isShown else { return }
             self.popoverOpen = false
             self.removeDismissMonitors()
             // Reclaim the invisible anchor window on close paths that
